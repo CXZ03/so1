@@ -1,31 +1,33 @@
 #include "my_lib.h"
-//hola
-//holi :3
-size_t my_strlen(const char *str){
-    const char *aux_str = str;
-    int i = 0;
-    while(str[i++]){
-    }
-    return aux_str - str;
-}
 
+size_t my_strlen(const char *str){
+    size_t len = 0;
+    for(int i=0;str[i]!='\0';i++){
+    len++;
+    }
+    return len;
+}
+//compara caracter a caracter hasta encontrar uno difernte y calcula la diferncia
 int my_strcmp(const char *str1, const char *str2){
     int i=0;
-    while(str1[i++] == str2[i++]){
-        if(str1[i] == "\0" && str2[i] == "\0")
+    while(str1[i]==str2[i]){
+       i++; 
+    }
+    if(str1[i]==str2[i]){
         return 0;
-    }
-    return str1[i] - str2[i];
+    }else if(str1[i]>str2[i]){
+        return str1[i]-str2[i];
+    }else 
+     return str2[i]-str1[i];
 }
-
+//Copia el contenido de src a dest
 char *my_strcpy(char *dest, const char *src){
-    for ( i = 0; src[i] != "\0"; i++)
-    {
-        dest[i]=src[i];
+     int i;
+    for (i=0;src[i]!='\0';i++){
+        dest[i] = src[i];
     }
-    dest[++i] == "\0"
-    return &dest;
-    
+    dest[i] = '\0';
+    return dest;
 }
 
 char *my_strncpy(char *dest, const char *src, size_t n){
