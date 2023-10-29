@@ -10,7 +10,7 @@ size_t my_strlen(const char *str){
 //compara caracter a caracter hasta encontrar uno difernte y calcula la diferncia
 int my_strcmp(const char *str1, const char *str2){
     int i=0;
-    while(str1[i]==str2[i]){
+    while((str1[i]==str2[i])&(str1[i] != '\0' )&(str2[i] != '\0')){
        i++; 
     }
     if(str1[i]==str2[i]){
@@ -18,7 +18,7 @@ int my_strcmp(const char *str1, const char *str2){
     }else if(str1[i]>str2[i]){
         return str1[i]-str2[i];
     }else 
-     return str2[i]-str1[i];
+     return str1[i]-str2[i];
 }
 //Copia el contenido de src a dest
 char *my_strcpy(char *dest, const char *src){
@@ -42,28 +42,28 @@ char *my_strncpy(char *dest, const char *src, size_t n){
 //Copia src a partir del unlo de dest
 char *my_strcat(char *dest, const char *src){
     //a nos guiará a colocarnos al final de dest
-    int a ;
-    while(dest[a]!='\0'){
-        a++;
+    char *dest1= dest;
+    while(*dest1!='\0'){
+        dest1++;
     }
     int i;
     for (i=0;src[i]!='\0';i++){
-        dest[a] = src[i];
-        a++;
+        *dest1++ = src[i];
+        
     }
-    dest[a] = '\0';
+    *dest1 = '\0';
     return dest;
     
 }
 //devuelve el punter al encontrar el caracter
 char *my_strchr(const char *str, int c){
-     int a=0;
+     
    while(*str!='\0'){
        if(*str==(char)c){
            return (char *)str;
 
-       }else
-       *str++;
+       }
+       str++;
    }
    return NULL;
 }
