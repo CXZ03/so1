@@ -29,32 +29,41 @@ char *my_strcpy(char *dest, const char *src){
     dest[i] = '\0';
     return dest;
 }
-
+//copia  el numero de caracters en dest pasado por size_t n
 char *my_strncpy(char *dest, const char *src, size_t n){
-    for ( i = 0; i < n; i++)
-    {
-        dest[i]=src[i];
+   int i;
+    for (i=0;i<n;i++){
+        dest[i] = src[i];
     }
-    dest[++i] == "\0"
-    return &dest;
+    //dest[i] = '\0'; por si hay que poner nulo al final
+    return dest;
 }
 
+//Copia src a partir del unlo de dest
 char *my_strcat(char *dest, const char *src){
-    int dest_size = my_strlen(*dest);
-    for ( i = 0; src[i] != "\0"; i++)
-    {
-        dest[dest_size + i] = src[i];
+    //a nos guiará a colocarnos al final de dest
+    int a ;
+    while(dest[a]!='\0'){
+        a++;
     }
-    dest[++i] == "\0"
-    return &dest;
+    int i;
+    for (i=0;src[i]!='\0';i++){
+        dest[a] = src[i];
+        a++;
+    }
+    dest[a] = '\0';
+    return dest;
+    
 }
+//devuelve el punter al encontrar el caracter
+char *my_strchr(const char *str, int c){
+     int a=0;
+   while(*str!='\0'){
+       if(*str==(char)c){
+           return (char *)str;
 
-char *my_strchr(const char *s, int c){
-    const char *aux_s = s;
-    while(*aux_s++ != c){
-        if(*aux_s){
-            return null;
-        }
-    }
-    return (char*)aux_s;
+       }else
+       *str++;
+   }
+   return NULL;
 }
