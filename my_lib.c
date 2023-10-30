@@ -67,3 +67,18 @@ char *my_strchr(const char *str, int c){
    }
    return NULL;
 }
+
+////////////////////////////Parte trabajo 1B
+//reserva un espacio de memoria de la pila 
+//devolviendo el puntero de este
+struct my_stack *my_stack_init (int size){
+    my_stack Pila;
+    Pila.size = size;
+    Pila.*top= NULL;
+    reutrn Pila;
+
+}
+
+int my_stack_push (struct my_stack *stack, void *data){
+    
+}
