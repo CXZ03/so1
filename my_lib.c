@@ -80,7 +80,7 @@ struct my_stack *my_stack_init (int size){
 }
 
 int my_stack_push (struct my_stack *stack, void *data){
-    
+
     // Realiza las comprobaciones necesarias sobre la pila.
     if (stack==NULL) {
         return -1; // La pila no existe
@@ -90,19 +90,42 @@ int my_stack_push (struct my_stack *stack, void *data){
     }
 
     // Crea un nuevo nodo para contener los datos
-    struct my_stack_node *new_node = (struct my_stack_node *)malloc(sizeof(struct my_stack_node));
-    if (new_node == NULL) {
+    struct my_stack_node *nuevo_nodo = (struct my_stack_node *)malloc(sizeof(struct my_stack_node));
+    if (nuevo_nodo == NULL) {
         return -1; // Error de asignación de memoria
     }
 
     // Asigna los datos al nuevo nodo
-    new_node->data = data;
+    nuevo_nodo->data = data;
 
     // Conecta el nuevo nodo al superior.
-    new_node->next = stack->top;
+    nuevo_nodo->next = stack->top;
 
     // Actualiza el puntero "top" para que apunte al nuevo nodo
-    stack->top = new_node;
+    stack->top = nuevo_nodo;
 
     return 0; // Éxito
+}
+
+
+void *my_stack_pop (struct my_stack *stack){
+
+    // Antes de sacar ningún elemento de la pila, comprueba que no esté vacía.
+    if (stack->top == NULL) {
+        return NULL; // La pila está vacía.
+    }
+
+    // Guardar el puntero a los datos del nodo superior.
+    void *datos = stack->top->data;
+
+    // Guardar el puntero al nodo superior de la pila.
+    struct my_stack_node *temporal = stack->top;
+
+    // Actualizar el puntero "top" para que apunte al siguiente nodo de la pila.
+    stack->top = stack->top->next;
+
+    //Liberar el espacio en el que estaba el nodo que acabamos de sacar.
+    free(temporal);
+
+    return datos;
 }
