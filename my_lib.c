@@ -75,10 +75,34 @@ struct my_stack *my_stack_init (int size){
     my_stack Pila;
     Pila.size = size;
     Pila.*top= NULL;
-    reutrn Pila;
+    return Pila;
 
 }
 
 int my_stack_push (struct my_stack *stack, void *data){
     
+    // Realiza las comprobaciones necesarias sobre la pila.
+    if (stack==NULL) {
+        return -1; // La pila no existe
+    }
+    if (stack->size<=0) {
+        return -1; // La pila no tiene un tamaño suficiente.
+    }
+
+    // Crea un nuevo nodo para contener los datos
+    struct my_stack_node *new_node = (struct my_stack_node *)malloc(sizeof(struct my_stack_node));
+    if (new_node == NULL) {
+        return -1; // Error de asignación de memoria
+    }
+
+    // Asigna los datos al nuevo nodo
+    new_node->data = data;
+
+    // Conecta el nuevo nodo al superior.
+    new_node->next = stack->top;
+
+    // Actualiza el puntero "top" para que apunte al nuevo nodo
+    stack->top = new_node;
+
+    return 0; // Éxito
 }
