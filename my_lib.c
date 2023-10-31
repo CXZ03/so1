@@ -129,3 +129,30 @@ void *my_stack_pop (struct my_stack *stack){
 
     return datos;
 }
+
+int my_stack_len (struct my_stack *stack){
+    int contador=0;
+    void *aux = stack->top;
+    while((aux->next) != NULL){
+        aux = aux->next;
+        contador++;
+    }
+    return contador;
+}
+
+//Este código es el de arriba pero menos optimizado, 
+//en caso que el de arriba no funcione miramos este, 
+//si el de arriba funciona, este debe ser eliminado.
+//
+//int my_stack_len (struct my_stack *stack){
+//    if(stack->top == NULL){
+//        return 0;
+//    }
+//    int contador=1;
+//    void *aux = stack->top->next;
+//    while((aux->next) != NULL){
+//        aux = aux->next;
+//        contador++;
+//    }
+//    return contador;
+//}
