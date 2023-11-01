@@ -156,3 +156,39 @@ int my_stack_len (struct my_stack *stack){
 //    }
 //    return contador;
 //}
+
+int my_stack_purge (struct my_stack *stack){
+    int bytes_liberados=0;
+    void *aux;
+    while(stack->top!=NULL){
+        aux = stack->top;
+        stack->top=stack->top->next;
+        free(aux);
+        bytes_liberados+=16;
+    }
+    free(stack);
+    bytes_liberados+=16;
+    return bytes_liberados;
+}
+
+//Este método es el mismo que el anterior pero  utilizando my_stack_pop 
+//en lugar de hacer las operaciones dentro del mismo metodo.
+//int my_stack_purge (struct my_stack *stack){
+//    int bytes_liberados=0;
+//    while(stack->top!=NULL){
+//        my_stack_pop(stack);
+//        bytes_liberados+=16;
+//    }
+//    free(stack);
+//    bytes_liberados+=16;
+//    return bytes_liberados;
+//}
+
+int my_stack_write (struct my_stack *stack, char *filename){
+
+}
+
+struct my_stack *my_stack_read (char *filename){
+
+}
+
