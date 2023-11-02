@@ -72,9 +72,9 @@ char *my_strchr(const char *str, int c){
 //reserva un espacio de memoria de la pila 
 //devolviendo el puntero de este
 struct my_stack *my_stack_init (int size){
-    my_stack Pila;
-    Pila.size = size;
-    Pila.*top= NULL;
+    struct my_stack *Pila = malloc(sizeof(struct my_stack));
+    Pila->size=size;
+    Pila->top=NULL;
     return Pila;
 
 }
@@ -88,54 +88,44 @@ int my_stack_push (struct my_stack *stack, void *data){
     if (stack->size<=0) {
         return -1; // La pila no tiene un tamaño suficiente.
     }
-
-    // Crea un nuevo nodo para contener los datos
-    struct my_stack_node *nuevo_nodo = (struct my_stack_node *)malloc(sizeof(struct my_stack_node));
-    if (nuevo_nodo == NULL) {
-        return -1; // Error de asignación de memoria
+    struct my_stack_node *nodo;
+    nodo = malloc(sizeof(struct my_stack_node));
+     nodo->data = data;
+    
+    if(stack->top == NULL){
+        stack->top = nodo;
+        nodo->next = NULL;
+    }else{
+        nodo->next = stack->top;
+        stack->top = nodo;
     }
-
-    // Asigna los datos al nuevo nodo
-    nuevo_nodo->data = data;
-
-    // Conecta el nuevo nodo al superior.
-    nuevo_nodo->next = stack->top;
-
-    // Actualiza el puntero "top" para que apunte al nuevo nodo
-    stack->top = nuevo_nodo;
-
-    return 0; // Éxito
+    return 0;
 }
 
 
 void *my_stack_pop (struct my_stack *stack){
-
+    struct my_stack_node *nodo = stack->top;
+    void *datos = NULL;
     // Antes de sacar ningún elemento de la pila, comprueba que no esté vacía.
-    if (stack->top == NULL) {
+    if (nodo == NULL) {
         return NULL; // La pila está vacía.
     }
 
-    // Guardar el puntero a los datos del nodo superior.
-    void *datos = stack->top->data;
-
-    // Guardar el puntero al nodo superior de la pila.
-    struct my_stack_node *temporal = stack->top;
-
-    // Actualizar el puntero "top" para que apunte al siguiente nodo de la pila.
-    stack->top = stack->top->next;
+    stack->top = nodo->next;
+    datos = nodo->data;
 
     //Liberar el espacio en el que estaba el nodo que acabamos de sacar.
-    free(temporal);
+    free(nodo);
 
     return datos;
 }
 
 int my_stack_len (struct my_stack *stack){
     int contador=0;
-    void *aux = stack->top;
-    while((aux->next) != NULL){
-        aux = aux->next;
+    struct my_stack_node *nodo = stack->top;
+    while(nodo!=NULL){
         contador++;
+        nodo=nodo->next;
     }
     return contador;
 }
@@ -183,12 +173,57 @@ int my_stack_purge (struct my_stack *stack){
 //    bytes_liberados+=16;
 //    return bytes_liberados;
 //}
+//Funcion Auxiliar recursiva para escrribir el fichero
+void FAuxiliarRecursiva(struct my_stack_node *nodo, int fich, int sz){
+    if(write(fich,nodo->data,sz)){
+        return;
+    }
+    if(nodo-> next!=NULL){
+        FAuxiliarRecursiva(nodo->next,fich,sz);
+    }
+}
 
 int my_stack_write (struct my_stack *stack, char *filename){
 
+int fich;
+int sz;
+    struct my_stack_node*nodo;
+
+    nodo=stack->top;
+    fich=open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    sz= stack->size;
+    //Errores
+if(fich==-1){
+    return -1;
+}
+ FAuxiliarRecursiva(nodo,fich,sz);
+    close(fich);
+    return my_stack_len(stack);
 }
 
 struct my_stack *my_stack_read (char *filename){
+int bytes;
+int fich;
+int sz;
+struct my_stack *pila;
+void *datos;
 
+    fich= open(filename, O_RDONLY, S_IRUSR);
+//error
+    if(fich==-1){
+        return NULL;
+    }
+
+bytes= read(fich, &sz, sizeof(int));
+    if(bytes==-1){
+        return NULL;
+    }
+while (bytes == pila->size){
+   pila = my_stack_init(sz);
+   datos = malloc(pila->size);
+   bytes = read(fich, datos, pila->size);
 }
-
+    free(datos);
+    close(fich);
+    return pila;
+}
