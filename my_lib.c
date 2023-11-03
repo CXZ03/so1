@@ -148,16 +148,17 @@ int my_stack_len (struct my_stack *stack){
 //}
 
 int my_stack_purge (struct my_stack *stack){
-    int bytes_liberados=0;
-    void *aux;
-    while(stack->top!=NULL){
-        aux = stack->top;
-        stack->top=stack->top->next;
-        free(aux);
-        bytes_liberados+=16;
+   int bytes_liberados = 0;    /* contador de espacio liberado */
+    struct my_stack_node *node; /* nodo auxiliar */
+
+    while (stack->top != NULL) /* recorremos toda la pila hasta liberar el último */
+    {
+        bytes_liberados += sizeof(*node);   /* tamaño de los nodos */
+        bytes_liberados += stack->size;     /* tamaño de los datos */
+        free(my_stack_pop(stack));          /* aprovechasmos la función my_stack_pop para ir liberando el top de ada iteración y así toda la pila */
     }
-    free(stack);
-    bytes_liberados+=16;
+    free(stack); /* liberamos la memoria que contiene la pila */
+    bytes_liberados += sizeof(struct my_stack); /* por último los bytes que ocupa el puntero de la pila */
     return bytes_liberados;
 }
 
@@ -174,13 +175,17 @@ int my_stack_purge (struct my_stack *stack){
 //    return bytes_liberados;
 //}
 //Funcion Auxiliar recursiva para escrribir el fichero
-void FAuxiliarRecursiva(struct my_stack_node *nodo, int fich, int sz){
-    if(write(fich,nodo->data,sz)){
-        return;
+int FAuxiliarRecursiva(struct my_stack_node *nodo, int fich, int sz){
+   
+    int bytes = 0;
+    if (nodo->next)
+    {
+        
+        bytes = FAuxiliarRecursiva(nodo->next, fich, sz);
     }
-    if(nodo-> next!=NULL){
-        FAuxiliarRecursiva(nodo->next,fich,sz);
-    }
+
+    
+    return write(fich, nodo->data, sz) + bytes;
 }
 
 int my_stack_write (struct my_stack *stack, char *filename){
@@ -196,10 +201,15 @@ int sz;
 if(fich==-1){
     return -1;
 }
+if(write(fich, &stack->size, sizeof(sz)) == -1){
+    return -1;
+}
  FAuxiliarRecursiva(nodo,fich,sz);
     close(fich);
     return my_stack_len(stack);
 }
+
+
 
 struct my_stack *my_stack_read (char *filename){
 int bytes;
@@ -218,10 +228,13 @@ bytes= read(fich, &sz, sizeof(int));
     if(bytes==-1){
         return NULL;
     }
-while (bytes == pila->size){
-   pila = my_stack_init(sz);
+    pila = my_stack_init(sz);
    datos = malloc(pila->size);
    bytes = read(fich, datos, pila->size);
+while (bytes == pila->size){
+   my_stack_push(pila,datos);
+   datos=malloc(pila->size);
+   bytes=read(fich,datos,pila->size);
 }
     free(datos);
     close(fich);
