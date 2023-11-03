@@ -1,243 +1,502 @@
 #include "my_lib.h"
 
-/* SEMANA 1*/
+/* SEMANA 4*/
 
-size_t my_strlen(const char *str){
+/**
+ * Función: my_strlen
+ * ------------------
+ * Cuenta la longitud de un String.
+ *
+ * Parámetros:
+ * -    const char *str: el puntero al String que contar.
+ *
+ * Salida:
+ * -    size_t: longitud del String.
+ */
+size_t my_strlen(const char *str)
+{
     size_t len = 0;
-    for(int i=0;str[i]!='\0';i++){
-    len++;
+    for (int i = 0; str[i] != '\0'; i++)
+    {
+        len++;
     }
     return len;
 }
-//compara caracter a caracter hasta encontrar uno difernte y calcula la diferncia
-int my_strcmp(const char *str1, const char *str2){
-    int i=0;
-    while((str1[i]==str2[i])&(str1[i] != '\0' )&(str2[i] != '\0')){
-       i++; 
+
+/**
+ * Función: my_strcmp
+ * ------------------
+ * Compara las cadenas apuntadas por str1 y str2.
+ *
+ * Parámetros:
+ * -    const char *str1: el puntero al String 1 que comparar.
+ *
+ * -    const char *str2: el puntero al String 2 que comparar.
+ *
+ * Salida:
+ * -    int: la diferencia ASCII que hay entre el primer carácter distinto entre
+ *      los dos Strings. Positivo si el String 1 es mayor que el String 2, de lo
+ *      contrario, negativo, y 0 en el caso de que sean iguales.
+ */
+int my_strcmp(const char *str1, const char *str2)
+{
+    int i = 0;
+    while ((str1[i] == str2[i]) & (str1[i] != '\0') & (str2[i] != '\0'))
+    {
+        i++;
     }
-    if(str1[i]==str2[i]){
+    if (str1[i] == str2[i])
+    {
         return 0;
-    }else if(str1[i]>str2[i]){
-        return str1[i]-str2[i];
-    }else 
-     return str1[i]-str2[i];
+    }
+    else if (str1[i] > str2[i])
+    {
+        return str1[i] - str2[i];
+    }
+    else
+        return str1[i] - str2[i];
 }
-//Copia el contenido de src a dest
-char *my_strcpy(char *dest, const char *src){
-     int i;
-    for (i=0;src[i]!='\0';i++){
+/**
+ * Función: my_strcpy
+ * ------------------
+ * Copia todo el contenido de src en la memoria apuntada por dest.
+ *
+ * Parámetros:
+ * -    char *dest: el puntero que apunta la zona de memoria donde se guarda
+ *      la copia.
+ *
+ * -    const char *src: el puntero que apunta el String que copiar.
+ *
+ * Salida:
+ * -    char *: devuelve el puntero que apunta la zona con la copia
+ */
+char *my_strcpy(char *dest, const char *src)
+{
+    int i;
+    for (i = 0; src[i] != '\0'; i++)
+    {
         dest[i] = src[i];
     }
     dest[i] = '\0';
     return dest;
 }
-//copia  el numero de caracters en dest pasado por size_t n
-char *my_strncpy(char *dest, const char *src, size_t n){
-   int i;
-    for (i=0;i<n;i++){
+/**
+ * Función: my_strncpy
+ * ------------------
+ * Copia n caracteres de src en la memoria apuntada por dest.
+ *
+ * Parámetros:
+ * -    char *dest: el puntero que apunta la zona de memoria donde se guarda
+ *      la copia.
+ *
+ * -    const char *src: el puntero que apunta el String que copiar.
+ *
+ * Salida:
+ * -    char *: devuelve el puntero que apunta la zona con la copia
+ */
+char *my_strncpy(char *dest, const char *src, size_t n)
+{
+    int i;
+    for (i = 0; i < n; i++)
+    {
         dest[i] = src[i];
     }
-    //dest[i] = '\0'; por si hay que poner nulo al final
+    // dest[i] = '\0'; por si hay que poner nulo al final
     return dest;
 }
 
-//Copia src a partir del unlo de dest
-char *my_strcat(char *dest, const char *src){
-    //a nos guiará a colocarnos al final de dest
-    char *dest1= dest;
-    while(*dest1!='\0'){
+/**
+ * Función: my_strcat
+ * ------------------
+ * Concatena el contenido de src a dest.
+ *
+ * Parámetros:
+ * -    char *dest: el puntero que apunta la zona de memoria donde se guarda
+ *      el resultado.
+ *
+ * -    const char *src: el puntero que apunta el String que va ser concatenado.
+ *
+ * Salida:
+ * -    char *: devuelve el puntero que apunta la zona de memoria con
+ *      el resultado.
+ */
+char *my_strcat(char *dest, const char *src)
+{
+    // a nos guiará a colocarnos al final de dest
+    char *dest1 = dest;
+    while (*dest1 != '\0')
+    {
         dest1++;
     }
     int i;
-    for (i=0;src[i]!='\0';i++){
+    for (i = 0; src[i] != '\0'; i++)
+    {
         *dest1++ = src[i];
-        
     }
     *dest1 = '\0';
     return dest;
-    
 }
-//devuelve el punter al encontrar el caracter
-char *my_strchr(const char *str, int c){
-     
-   while(*str!='\0'){
-       if(*str==(char)c){
-           return (char *)str;
-
-       }
-       str++;
-   }
-   return NULL;
+/**
+ * Función: my_strchr
+ * ------------------
+ * Busca el primer carácter en el String que coincide con c
+ * y devuelve este mismo.
+ *
+ * Parámetros:
+ * -    const char *str: el puntero que apunta al String donde buscamos
+ *      el carácter.
+ *
+ * -    int c: el carácter en número ASCII que buscamos.
+ *
+ * Salida:
+ * -    char *: devuelve el puntero que apunta la zona de memoria del carácter.
+ */
+char *my_strchr(const char *str, int c)
+{
+    while (*str != '\0')
+    {
+        if (*str == (char)c)
+        {
+            return (char *)str;
+        }
+        str++;
+    }
+    return NULL;
 }
 
-/* SEMANA 2 */
+/* SEMANA 5-6 */
 
-////////////////////////////Parte trabajo 1B
-//reserva un espacio de memoria de la pila 
-//devolviendo el puntero de este
-struct my_stack *my_stack_init (int size){
+/**
+ * Función: my_stack_init
+ * ----------------------
+ * Inicializa el struct my_stack con el tamaño de los datos de la pila.
+ *
+ * Parámetros:
+ * -    int size: tamaño de los datos de cada nodo de la pila.
+ *
+ * Salida:
+ * -    struct my_stack *: devuelve el puntero a la pila inicializada.
+ */
+struct my_stack *my_stack_init(int size)
+{
     struct my_stack *Pila = malloc(sizeof(struct my_stack));
-    Pila->size=size;
-    Pila->top=NULL;
+    Pila->size = size;
+    Pila->top = NULL;
     return Pila;
-
 }
 
-int my_stack_push (struct my_stack *stack, void *data){
-
+/**
+ * Función: my_stack_push
+ * ----------------------
+ * Inserta un nuevo nodo con los datos introducidos seguido del top de la pila.
+ *
+ * Parámetros:
+ * -    struct my_stack *stack: pila donde insertar el nuevo nodo.
+ *
+ * -    void *data: dato que guardar en el nodo que será introducido a la pila.
+ *
+ * Salida:
+ * -    int: 0 si ha ejecutado con éxito, de lo contrario -1.
+ */
+int my_stack_push(struct my_stack *stack, void *data)
+{
     // Realiza las comprobaciones necesarias sobre la pila.
-    if (stack==NULL) {
+    if (stack == NULL)
+    {
         return -1; // La pila no existe
     }
-    if (stack->size<=0) {
+    if (stack->size <= 0)
+    {
         return -1; // La pila no tiene un tamaño suficiente.
     }
     struct my_stack_node *nodo;
     nodo = malloc(sizeof(struct my_stack_node));
-     nodo->data = data;
-    
-    if(stack->top == NULL){
+    nodo->data = data;
+
+    if (stack->top == NULL)
+    {
         stack->top = nodo;
         nodo->next = NULL;
-    }else{
+    }
+    else
+    {
         nodo->next = stack->top;
         stack->top = nodo;
     }
     return 0;
 }
 
-
-void *my_stack_pop (struct my_stack *stack){
+/**
+ * Función: my_stack_pop
+ * ---------------------
+ * Devuelve el top del stack, y lo elimina de la pila.
+ *
+ * Parámetros:
+ * -    struct my_stack *stack: pila donde sacar el nodo.
+ *
+ * Salida:
+ * -    void *: devuelve el nodo sacado.
+ */
+void *my_stack_pop(struct my_stack *stack)
+{
     struct my_stack_node *nodo = stack->top;
     void *datos = NULL;
     // Antes de sacar ningún elemento de la pila, comprueba que no esté vacía.
-    if (nodo == NULL) {
+    if (nodo == NULL)
+    {
         return NULL; // La pila está vacía.
     }
 
     stack->top = nodo->next;
     datos = nodo->data;
 
-    //Liberar el espacio en el que estaba el nodo que acabamos de sacar.
+    // Liberar el espacio en el que estaba el nodo que acabamos de sacar.
     free(nodo);
 
     return datos;
 }
 
-int my_stack_len (struct my_stack *stack){
-    int contador=0;
+/**
+ * Función: my_stack_len
+ * ---------------------
+ * Devuelve el número de nodos recorriendo toda la pila.
+ *
+ * Parámetros:
+ * -    struct my_stack *stack: pila donde contar los nodos.
+ *
+ * Salida:
+ * -    int: cantidad de nodos que hay en la pila.
+ */
+int my_stack_len(struct my_stack *stack)
+{
+    int contador = 0;
     struct my_stack_node *nodo = stack->top;
-    while(nodo!=NULL){
+    while (nodo != NULL)
+    {
         contador++;
-        nodo=nodo->next;
+        nodo = nodo->next;
     }
     return contador;
 }
 
-//Este código es el de arriba pero menos optimizado, 
-//en caso que el de arriba no funcione miramos este, 
-//si el de arriba funciona, este debe ser eliminado.
-//
-//int my_stack_len (struct my_stack *stack){
-//    if(stack->top == NULL){
-//        return 0;
-//    }
-//    int contador=1;
-//    void *aux = stack->top->next;
-//    while((aux->next) != NULL){
-//        aux = aux->next;
-//        contador++;
-//    }
-//    return contador;
-//}
-
+/**
+ * Función: my_stack_purge
+ * ---------------------
+ * Elimina todos los nodos en la pila, y el puntero de la pila.
+ *
+ * Parámetros:
+ * -    struct my_stack *stack: pila que eliminar.
+ *
+ * Salida:
+ * -    int: cantidad de bytes liberados.
+ */
 int my_stack_purge(struct my_stack *stack)
 {
     int bytes_liberados = 0;    /* contador de espacio liberado */
     struct my_stack_node *node; /* nodo auxiliar */
 
-    while (stack->top != NULL) /* recorremos toda la pila hasta liberar el último */
+    /* recorremos toda la pila hasta liberar el último */
+    while (stack->top != NULL)
     {
-        bytes_liberados += sizeof(*node);   /* tamaño de los nodos */
-        bytes_liberados += stack->size;     /* tamaño de los datos */
-        free(my_stack_pop(stack));          /* aprovechasmos la función my_stack_pop para ir liberando el top de ada iteración y así toda la pila */
+        bytes_liberados += sizeof(*node); /* tamaño de los nodos */
+        bytes_liberados += stack->size;   /* tamaño de los datos */
+
+        /* aprovechamos la función my_stack_pop para ir liberando el top de
+        cada iteración y así toda la pila */
+        free(my_stack_pop(stack));
     }
     free(stack); /* liberamos la memoria que contiene la pila */
-    bytes_liberados += sizeof(struct my_stack); /* por último los bytes que ocupa el puntero de la pila */
+
+    /* por último los bytes que ocupa el puntero de la pila */
+    bytes_liberados += sizeof(struct my_stack);
     return bytes_liberados;
 }
 
-/*  Xiaozhe: Creo que el probleama aqui es no contar con las bytes de los datos, y tambien aplicaria la función de sizeof()
-    por si el tamaño varia, guardo esta en comentario y hago una nueva
-int my_stack_purge (struct my_stack *stack){
-    int bytes_liberados=0;
-    void *aux;
-    while(stack->top!=NULL){
-        aux = stack->top;
-        stack->top=stack->top->next;
-        free(aux);
-        bytes_liberados+=16;
-    }
-    free(stack);
-    bytes_liberados+=16;
-    return bytes_liberados;
-}
-
-*/
-
-//Este método es el mismo que el anterior pero  utilizando my_stack_pop 
-//en lugar de hacer las operaciones dentro del mismo metodo.
-//int my_stack_purge (struct my_stack *stack){
-//    int bytes_liberados=0;
-//    while(stack->top!=NULL){
-//        my_stack_pop(stack);
-//        bytes_liberados+=16;
-//    }
-//    free(stack);
-//    bytes_liberados+=16;
-//    return bytes_liberados;
-//}
-
-int my_stack_write (struct my_stack *stack, char *filename)
+/**
+ * Función: my_stack_write
+ * -----------------------
+ * Primero guarda el tamaño de los datos de la pila en un int al inicio del
+ * fichero. Luego guarda todos los datos de la pila desde abajo hasta top de
+ * la pila dentro del fichero.
+ *
+ * Parámetros:
+ * -    struct my_stack *stack: pila de la que copiar.
+ *
+ * -    char *filename: fichero al cual copiar.
+ *
+ * Salida:
+ * -    int: cantidad de elementos copiados.
+ */
+int my_stack_write(struct my_stack *stack, char *filename)
 {
+    /* Control de error del stack */
+    if (stack == NULL)
+    {
+        fprintf(stderr, "Error: Pila inexistente");
+        return -1;
+    }
+
+    if (stack->top == NULL)
+    {
+        fprintf(stderr, "Error: Pila vacia");
+        return -1;
+    }
+
     /* Contador de los bytes escritos*/
-    int count;
+    int count = 0;
+    int countAux;
 
     /* Inicializamos el fichero */
     int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
     /* Control de errores */
-    if(fd == -1){
+    if (fd == -1)
+    {
         fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
         return -1;
     }
 
     /* Escribimos el tamaño de los datos */
-    void *buf = stack->size;
-    if(write(fd, buf, sizeof(int)) == -1){
+    countAux = write(fd, &stack->size, sizeof(int));
+    if (countAux == -1)
+    {
         fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
         return -1;
     }
-    count =+ sizeof(int);
+    count += countAux;
+    // count++;
 
     /* Escribimos los datos al fichero */
-    count =+ stackToFileWrite(stack->top)
+    countAux = stackToFileWrite(fd, stack->top, stack->size);
+    if (countAux == -1)
+    {
+        fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
+        return -1;
+    }
+    count += countAux;
 
     /* Finalización de la función */
-    if(close(fd) == -1){
+    if (close(fd) == -1)
+    {
         fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
         return -1;
     }
 
     return count;
-    
 }
 
-int stackToFileWrite(struct my_stack_node *node, int fd){
-    /* Hacemos la llamada recursiva antes del write para que empiece a escribir en la parte inferior de la pila*/
-    stackToFileWrite(node->next, fd);
+int stackToFileWrite(int fd, struct my_stack_node *node, int size,
+                     int totalCount)
+{
+    /* Caso base, cuando el nodo es nulo */
+    if (node == NULL)
+    {
+        return 0;
+    }
 
+    /* Creamos un variable static para ir contando el total de bytes escritos de
+     * las llamadas recursivas */
+    // static int totalCount = 0;
 
+    /* Hacemos la llamada recursiva antes del write para que empiece a escribir en
+     * la parte inferior de la pila*/
+    if (stackToFileWrite(fd, node->next, size, totalCount) == -1)
+    {
+        return -1; /* Propagación de errores */
+    }
+
+    int count = write(fd, node->data, size);
+    if (count == -1)
+    {
+        fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
+        return -1;
+    }
+
+    /* Vamos añadiendo el contador local al total*/
+    totalCount += count;
+    // totalCount++;
+
+    return totalCount;
+}
+
+/**
+ * Función: my_stack_write
+ * -----------------------
+ * Primero guarda el tamaño de los datos de la pila en un int al inicio del
+ * fichero. Luego guarda todos los datos de la pila desde abajo hasta top de
+ * la pila dentro del fichero.
+ *
+ * Parámetros:
+ * -    struct my_stack *stack: pila de la que copiar.
+ *
+ * -    char *filename: fichero al cual copiar.
+ *
+ * Salida:
+ * -    int: cantidad de elementos copiados.
+ */
+struct my_stack *my_stack_read(char *filename)
+{
+    /* Inicializamos el fichero */
+    int fd = open(filename, O_RDONLY);
+    if (fd == -1)
+    {
+        fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
+        return NULL;
+    }
+
+    /* Leemos el tamaño del los datos de los nodos */
+    int size;
+    if (read(fd, &size, sizeof(int)) == -1)
+    {
+        fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
+        return NULL;
+    }
+    /* Generamos la pila */
+    struct my_stack *stackRead = my_stack_init(size);
+
+    /* Leemos los datos del fichero */
+    void *dataAux = malloc(size);
+    if (dataAux == NULL)
+    {
+        fprintf(stderr, "Error: Memory allocation failed\n");
+        close(fd);
+        my_stack_purge(stackRead); // Limpia la memoria antes de salir
+        return NULL;
+    }
+
+    int count = read(fd, dataAux, size);
+    while (count != 0)
+    {
+        if (count == -1)
+        {
+            fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
+            free(dataAux);
+            close(fd);
+            my_stack_purge(stackRead);
+            return NULL;
+        }
+
+        if (my_stack_push(stackRead, dataAux) == -1)
+        {
+            fprintf(stderr, "Error: Fallo al hacer push de la pila\n");
+            free(dataAux);
+            close(fd);
+            my_stack_purge(stackRead);
+            return NULL;
+        }
+
+        count = read(fd, dataAux, size);
+    }
+
+    free(dataAux); // Liberar la memoria después de usarla
+
+    if (close(fd) == -1)
+    {
+        fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
+        return NULL;
+    }
+
+    return stackRead;
 }
 
 /* Antiguo
