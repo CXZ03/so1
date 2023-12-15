@@ -7,25 +7,23 @@
 #define _POSIX_C_SOURCE 200112L
 
 /* Declaración de librerias */
-#include <errno.h>     
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/wait.h>
-#include <signal.h>  
-#include <fcntl.h> 
 
 #define RESET_FORMATO "\033[0m"
 #define GRIS "\x1b[94m"
 #define AZUL_T "\x1b[34m"
 #define MAGENTA_T "\x1b[35m"
-
-
 
 /* Declaración de constantes */
 
@@ -51,23 +49,15 @@ void imprimir_prompt();
 char line[COMMAND_LINE_SIZE];  // almacena la línea de comando
 char *args[ARGS_SIZE];         // almacena los argumentos disponibles
 
-int check_internal(char **args)
-{
-    if (!strcmp(args[0], "cd"))
-        return internal_cd(args);
-    if (!strcmp(args[0], "export"))
-        return internal_export(args);
-    if (!strcmp(args[0], "source"))
-        return internal_source(args);
-    if (!strcmp(args[0], "jobs"))
-        return internal_jobs(args);
-    if (!strcmp(args[0], "bg"))
-        return internal_bg(args);
-    if (!strcmp(args[0], "fg"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "exit"))
-        exit(0);
-    return 0; // no es un comando interno
+int check_internal(char **args) {
+    if (!strcmp(args[0], "cd")) return internal_cd(args);
+    if (!strcmp(args[0], "export")) return internal_export(args);
+    if (!strcmp(args[0], "source")) return internal_source(args);
+    if (!strcmp(args[0], "jobs")) return internal_jobs(args);
+    if (!strcmp(args[0], "bg")) return internal_bg(args);
+    if (!strcmp(args[0], "fg")) return internal_fg(args);
+    if (!strcmp(args[0], "exit")) exit(0);
+    return 0;  // no es un comando interno
 }
 
 /**
@@ -82,77 +72,104 @@ int check_internal(char **args)
  * Salida:
  *      - char *: puntero de char que apunta a la línea leida (line).
  */
-int internal_cd(char **args){
+int internal_cd(char **args) {
 #if DEBUG_1
     printf("[internal_cd()→ Esta función cambiará de directorio]\n");
 #endif
-    printf("internal_cd:\n");
-    for (int i = 0; args[i] != NULL; i++) {
-    printf("%s\n", args[i]);
+
+    // // Para mirar el contenido de args
+    // printf("internal_cd:\n");
+    // for (int i = 0; args[i] != NULL; i++) {
+    // printf("%s\n", args[i]);
+    // }
+
+    // Mirar la cantidad de tokens
+    if (length(*args) == 1) {
+        // caso 0 directorio, ir a HOME
+        if (chdir(getenv("HOME")) == -1) fprintf(stderr, "Error de sintaxis\n");
+    } else if (length(*args) == 2) {
+        // caso 1 argumento
+        if (chdir(*args[2]) == -1) fprintf(stderr, "Error de sintaxis\n");
+    } else if (length(*args) > 2) {
+        // caso más de 1 argumento
+        if (strchr(*args[2], '\\') == &*args[length(*args[2]) - 1] ||
+            strchr(*args[2], '\'') == &*args[0] ||
+            strchr(*args[2], '\"') == &*args[0]) 
     }
+
     return 1;
 }
+//[internal_cd()→ PWD: /home/uib/Documentos]
 
-//INTERNAL EXPORT
-//DESCOMPONEMOS NOMBRE = VALOR 
+// INTERNAL EXPORT
+// DESCOMPONEMOS NOMBRE = VALOR
 //
-int internal_export(char **args){
-   const char *IGUAL = "=";
+int internal_export(char **args) {
+    const char *IGUAL = "=";
     char *nombre, *valor;
-    //ERROR POR SI EL PRIMER TOKEN ESTA VACIO
-    if(args[1]  == NULL){
+    // ERROR POR SI EL PRIMER TOKEN ESTA VACIO
+    if (args[1] == NULL) {
         fprintf(stderr, "Error de sintaxis\n");
     }
-    //SI NO HAY ERROES ASIGNAMOS VALORES
+    // SI NO HAY ERROES ASIGNAMOS VALORES
     else {
         nombre = strtok(args[1], IGUAL);
         valor = strtok(NULL, IGUAL);
     }
-   //MOSTRAMOS ERROR PORQUE NO HAY NADA 
-    if (args[1] == NULL || valor == NULL){
+    // MOSTRAMOS ERROR PORQUE NO HAY NADA
+    if (args[1] == NULL || valor == NULL) {
         fprintf(stderr, "Error de sintaxis\n");
-    }
-    else {
+    } else {
 #if DEBUG_2
         printf("[internal_export() → nombre: %s]\n", nombre);
         printf("[internal_export() → valor: %s]\n", valor);
-        printf("[internal_export() → antiguo valor para %s: %s]\n", nombre, getenv(nombre));
+        printf("[internal_export() → antiguo valor para %s: %s]\n", nombre,
+               getenv(nombre));
 #endif
         setenv(nombre, valor, 1);
 #if DEBUG_2
-        printf("[internal_export() → nuevo valor para %s: %s]\n", nombre, getenv(nombre));
+        printf("[internal_export() → nuevo valor para %s: %s]\n", nombre,
+               getenv(nombre));
 #endif
     }
 
     return 1;
 }
 
-int internal_source(char **args){
-    printf("[internal_source()→Esta función ejecutará un fichero de líneas de comandos]\n");
+int internal_source(char **args) {
+    printf(
+        "[internal_source()→Esta función ejecutará un fichero de líneas de "
+        "comandos]\n");
     return 1;
 }
 
-int internal_jobs(char **args){
+int internal_jobs(char **args) {
 #if DEBUG_1
-    printf("[internal_jobs()→ Esta función mostrará el PID de los procesos que no estén en foreground]\n");
+    printf(
+        "[internal_jobs()→ Esta función mostrará el PID de los procesos que no "
+        "estén en foreground]\n");
 #endif
     return 1;
 }
 
-int internal_fg(char **args){
+int internal_fg(char **args) {
 #if DEBUG_1
-    printf("[internal_fg()→ Esta función enviará un trabajo detenido al foreground reactivando su ejecución, o uno del background al foreground ]\n");
+    printf(
+        "[internal_fg()→ Esta función enviará un trabajo detenido al "
+        "foreground "
+        "reactivando su ejecución, o uno del background al foreground ]\n");
 #endif
     return 1;
 }
 
-int internal_bg(char **args){
+int internal_bg(char **args) {
 #if DEBUG_1
-    printf("[internal_bg()→ Esta función reactivará un proceso detenido para que siga ejecutándose pero en segundo plano]\n");
+    printf(
+        "[internal_bg()→ Esta función reactivará un proceso detenido para que "
+        "siga ejecutándose pero en segundo plano]\n");
 #endif
     return 1;
 }
-
 
 /**
  * Función: read_line()
@@ -161,7 +178,7 @@ int internal_bg(char **args){
  * Lee la linea de comando que ha introducido el usuario por stdin, y cambia
  * el carácter '\n' por '\0'. También imprime el prompt de la consola.
  *
- * con strchr buscamos la primera ocurriencia del salto de linea en line 
+ * con strchr buscamos la primera ocurriencia del salto de linea en line
  * Argumentos:
  *      - line: puntero de char donde guardaremos la línea leida.
  *
@@ -170,24 +187,17 @@ int internal_bg(char **args){
  */
 
 char *read_line(char *line) {
-
- 
     imprimir_prompt();
-    char *ptr = fgets(line, COMMAND_LINE_SIZE, stdin); 
-    if (ptr)
-    {
-     
+    char *ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
+    if (ptr) {
         char *pos = strchr(line, 10);
-        if (pos != NULL)
-        {
+        if (pos != NULL) {
             *pos = '\0';
         }
-    }
-    else
-    { 
+    } else {
         printf("\r");
-        if (feof(stdin)) { 
-            //Ctrl+D
+        if (feof(stdin)) {
+            // Ctrl+D
             fprintf(stderr, "Bye bye\n");
             exit(0);
         }
@@ -204,75 +214,73 @@ char *read_line(char *line) {
  *      - int: si es 0 significa que ha hecho la función correctamente.
  */
 
-
 void imprimir_prompt() {
-
     /* Vaciado del buffer */
     sleep(1);  // Dormir un segundo
     fflush(stdout);
     printf(MAGENTA_T);
     /* imprimimos el prompt personalizado */
-    printf("%s:~%s%s%c ",getenv("USER"), getenv("HOME"), getenv("PWD"), PROMPT);
+    printf("%s:~%s%s%c ", getenv("USER"), getenv("HOME"), getenv("PWD"),
+           PROMPT);
 
     printf(RESET_FORMATO);
 }
 
-
-int parse_args(char **args, char *line){
-    int i=0;
-    args[i] = strtok(line," \t\n\r");
+int parse_args(char **args, char *line) {
+    int i = 0;
+    args[i] = strtok(line, " \t\n\r");
 
 #if DEBUG_1
-  fprintf(stderr, AZUL_T "[parse_args()→ token %i: %s]\n" RESET_FORMATO, i, args[i]);
-#endif 
-    while(args[i] && args[i][0] != '#'){
-         i++;
-        args[i] = strtok(NULL, " \t\n\r");
-    
-#if DEBUG_1
-     fprintf(stderr,AZUL_T  "[parse_args()→ token %i: %s]\n" RESET_FORMATO, i, args[i]);
+    fprintf(stderr, AZUL_T "[parse_args()→ token %i: %s]\n" RESET_FORMATO, i,
+            args[i]);
 #endif
-}
-if (args[i])
-    {
-        //en caso de que el ultimo token sea simbolo comentario
-        args[i] = NULL; 
+    while (args[i] && args[i][0] != '#') {
+        i++;
+        args[i] = strtok(NULL, " \t\n\r");
+
 #if DEBUG_1
-        fprintf(stderr, AZUL_T "[parse_args()→ token %i corregido: %s]\n" RESET_FORMATO, i, args[i]);
+        fprintf(stderr, AZUL_T "[parse_args()→ token %i: %s]\n" RESET_FORMATO,
+                i, args[i]);
+#endif
+    }
+    if (args[i]) {
+        // en caso de que el ultimo token sea simbolo comentario
+        args[i] = NULL;
+#if DEBUG_1
+        fprintf(stderr,
+                AZUL_T "[parse_args()→ token %i corregido: %s]\n" RESET_FORMATO,
+                i, args[i]);
 #endif
     }
     return i;
 }
 
-int execute_line(char *line){
- char *args[ARGS_SIZE];
+int execute_line(char *line) {
+    char *args[ARGS_SIZE];
     // pid_t pid, status;
     char command_line[COMMAND_LINE_SIZE];
 
-    //copiamos comando sin '\n'
+    // copiamos comando sin '\n'
     memset(command_line, '\0', sizeof(command_line));
-    strcpy(command_line, line); 
+    strcpy(command_line, line);
 
-    if (parse_args(args, line) > 0)
-    {
-        if (check_internal(args))
-        {
+    if (parse_args(args, line) > 0) {
+        if (check_internal(args)) {
             return 1;
         }
 #if DEBUGN_1
-        fprintf(stderr, GRIS "[execute_line()→ PID padre: %d]\n" RESET_FORMATO, getpid());
+        fprintf(stderr, GRIS "[execute_line()→ PID padre: %d]\n" RESET_FORMATO,
+                getpid());
 #endif
     }
     return 0;
 }
-int main(int argC, char *argV[] ){
-    //Guardamos nombre programa
+int main(int argC, char *argV[]) {
+    // Guardamos nombre programa
     char line[COMMAND_LINE_SIZE];
     memset(line, 0, COMMAND_LINE_SIZE);
-    while (1)
-    {
-        if (read_line(line))
-        { // !=NULL
+    while (1) {
+        if (read_line(line)) {  // !=NULL
             execute_line(line);
         }
     }
