@@ -2,7 +2,8 @@
 /* Autores: Guillem, Elena, Xiaozhe */
 
 /* Declaración de debugs */
-#define DEBUG_1 1
+#define DEBUG_1 0
+#define DEBUG_2 1
 #define _POSIX_C_SOURCE 200112L
 
 /* Declaración de librerias */
@@ -69,10 +70,26 @@ int check_internal(char **args)
     return 0; // no es un comando interno
 }
 
-
+/**
+ * Función: int internal_cd(char **args)
+ * ----------------------
+ * Descripción:
+ * Cambia el directorio actual por el directorio introducido como "args"
+ *
+ * Argumentos:
+ *      - args: puntero a los argumentos que contiene el path.
+ *
+ * Salida:
+ *      - char *: puntero de char que apunta a la línea leida (line).
+ */
 int internal_cd(char **args){
+#if DEBUG_1
     printf("[internal_cd()→ Esta función cambiará de directorio]\n");
-
+#endif
+    printf("internal_cd:\n");
+    for (int i = 0; args[i] != NULL; i++) {
+    printf("%s\n", args[i]);
+    }
     return 1;
 }
 
@@ -96,13 +113,13 @@ int internal_export(char **args){
         fprintf(stderr, "Error de sintaxis\n");
     }
     else {
-#if DEBUG_1
+#if DEBUG_2
         printf("[internal_export() → nombre: %s]\n", nombre);
         printf("[internal_export() → valor: %s]\n", valor);
         printf("[internal_export() → antiguo valor para %s: %s]\n", nombre, getenv(nombre));
 #endif
         setenv(nombre, valor, 1);
-#if DEBUG_1
+#if DEBUG_2
         printf("[internal_export() → nuevo valor para %s: %s]\n", nombre, getenv(nombre));
 #endif
     }
@@ -229,7 +246,7 @@ if (args[i])
 
 int execute_line(char *line){
  char *args[ARGS_SIZE];
-    pid_t pid, status;
+    // pid_t pid, status;
     char command_line[COMMAND_LINE_SIZE];
 
     //copiamos comando sin '\n'

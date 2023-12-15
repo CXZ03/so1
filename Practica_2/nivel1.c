@@ -200,7 +200,7 @@ if (args[i])
 
 int execute_line(char *line){
  char *args[ARGS_SIZE];
-    pid_t pid, status;
+    /*pid_t pid, status;*/
     char command_line[COMMAND_LINE_SIZE];
 
     //copiamos comando sin '\n'
@@ -219,6 +219,7 @@ int execute_line(char *line){
     }
     return 0;
 }
+
 int main(int argC, char *argV[] ){
     //Guardamos nombre programa
     char line[COMMAND_LINE_SIZE];
