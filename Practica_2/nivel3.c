@@ -3,6 +3,7 @@
 
 /* Declaración de debugs */
 #define DEBUG_1 1
+#define DEBUG_0 0
 #define _POSIX_C_SOURCE 200112L
 
 /* Declaración de librerias */
@@ -166,7 +167,32 @@ int internal_export(char **args){
 }
 
 int internal_source(char **args){
-    printf("[internal_source()→Esta función ejecutará un fichero de líneas de comandos]\n");
+    char *linea  = (char*)malloc(sizeof(char) * COMMAND_LINE_SIZE);
+    //abrimos el archivo
+    if (linea){
+        FILE *fich = fopen(args[1], "r");
+        if(fich){
+        while(fgets(linea,COMMAND_LINE_SIZE,fich)){
+            //pasamos las lineas del fichero a execute_line
+                execute_line(linea);
+                fflush(fich);
+        }
+        fclose(fich);
+        free(linea);
+        return EXIT_SUCCESS;
+    //error al abrir fichero
+    }else{
+        perror("Error");
+        free(linea);
+
+    }
+}
+    return EXIT_FAILURE;
+
+    #if DEBUG_0
+        printf("[internal_source() → Esta función ejecutará un fichero de líneas de comandos]\n");
+    #endif
+    
     return 1;
 }
 
