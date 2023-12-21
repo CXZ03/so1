@@ -306,7 +306,7 @@ int parse_args(char **args, char *line) {
 
 int execute_line(char *line) {
     char *args[ARGS_SIZE];
-    pid_t pid/*, stat*/;
+    pid_t pid /*, stat*/;
     char command_line[COMMAND_LINE_SIZE];
 
     // copiamos comando sin '\n'
@@ -322,8 +322,8 @@ int execute_line(char *line) {
             fprintf(stderr,
                     GRIS "[execute_line()→ PID padre: %d(%s)]\n" RESET_FORMATO,
                     getpid(), args[0]);
-            pid = fork();
 #endif
+            pid = fork();
             if (pid == 0) {
                 // Añadido n4
                 signal(SIGCHLD, SIG_DFL);
