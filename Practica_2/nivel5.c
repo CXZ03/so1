@@ -4,7 +4,7 @@
 /* Declaración de debugs */
 #define DEBUG_1 0
 #define DEBUG_0 0
-#define DEBUG_4 0
+#define DEBUG_4 1
 #define DEBUG_5 1
 #define _POSIX_C_SOURCE 200112L
 
@@ -62,6 +62,7 @@ char line[COMMAND_LINE_SIZE];             // almacena la línea de comando
 char *args[ARGS_SIZE];                    // almacena los argumentos disponibles
 static char mi_shell[COMMAND_LINE_SIZE];  // almacena comando en ejecucion
 static struct info_job jobs_list[N_JOBS];  // almacena la tablaa
+static int NJobs;
 
 int check_internal(char **args) {
     if (!strcmp(args[0], "cd")) return internal_cd(args);
@@ -214,16 +215,44 @@ int internal_bg(char **args) {
 #endif
     return 1;
 }
-
+/**
+ * Función: int jobs_list_add(pid_t pid, char status, char *cmd)
+ * ----------------------------------------
+ *
+ * Descripción:
+ * Esta función incorpora las trabajos en background en la lista de trabajos
+ * jobs_list[] Argumentos:
+ *      - pid: num de pid
+ *      - status: estado del trabajo
+ *      - cmd
+ *
+ * Salida:
+ *      - int: 1 si localiza el token en args, 0 si no lo localiza.
+ */
+int jobs_list_add(pid_t pid, char estado, char *command_line) {
+    if (NJobs > N_JOBS) {
+        fprintf(stderr, "cantidad máxima de trabajo sobrepasado");
+        return -1;
+    } else {
+        NJobs++;
+        jobs_list[NJobs].pid = pid;
+        jobs_list[NJobs].estado = estado;
+        strcpy(jobs_list[NJobs].cmd, command_line);
+#if DEBUG_5
+        printf("jobs_list_add()-> num pid: %d cmd: %s\n", NJobs,
+               jobs_list[NJobs].cmd);
+#endif
+    }
+}
 /**
  * Función: int is_background(char **args);
  * ----------------------------------------
  *
  * Descripción:
- * Esta función devueve 1(TRUE) si localiza el token & en args[ ] (comando en
- * background) y 0 (FALSE) en caso contrario (comando en foreground). Sustituirá
- * el token & por NULL para después poder pasarle args[ ] sin & a execvp().
- * Argumentos:
+ * Esta función devueve 1(TRUE) si localiza el token & en args[ ] (comando
+ * en background) y 0 (FALSE) en caso contrario (comando en foreground).
+ * Sustituirá el token & por NULL para después poder pasarle args[ ] sin & a
+ * execvp(). Argumentos:
  *      - args: donde esta guardado el token &
  *
  * Salida:
@@ -242,7 +271,7 @@ int is_background(char **args) {
     } else {
         // caso de que no es un backgroud
 #if DEBUG_5
-        printf("No es backgroud");
+        printf("is_backgroud()-> No es backgroud");
 #endif
         return 0;
     }
@@ -315,8 +344,8 @@ int parse_args(char **args, char *line) {
     args[i] = strtok(line, " \t\n\r");
 
 #if DEBUG_1
-    // fprintf(stderr, AZUL_T "[parse_args()→ token %i: %s]\n" RESET_FORMATO, i,
-    // args[i]);
+    // fprintf(stderr, AZUL_T "[parse_args()→ token %i: %s]\n"
+    // RESET_FORMATO, i, args[i]);
 #endif
     while (args[i] && args[i][0] != '#') {
         i++;
@@ -344,7 +373,6 @@ int execute_line(char *line) {
     char command_line[COMMAND_LINE_SIZE];
 
     // copiamos comando sin '\n'
-    memset(command_line, '\0', sizeof(command_line));
     strcpy(command_line, line);
 
     if (parse_args(args, line) > 0) {
@@ -357,23 +385,35 @@ int execute_line(char *line) {
                     GRIS "[execute_line()→ PID padre: %d(%s)]\n" RESET_FORMATO,
                     getpid(), args[0]);
 #endif
+            bool isBackground = is_background(line);
             pid = fork();
             if (pid == 0) {
                 // Añadido n4
                 signal(SIGCHLD, SIG_DFL);
                 signal(SIGINT, SIG_IGN);
-
+                signal(SIGTSTP, SIG_IGN);
+#if DEBUG_4
                 fprintf(stderr,
                         GRIS
                         "[execute_line()→ PID hijo: %d(%s)]\n" RESET_FORMATO,
                         getpid(), args[0]);
-                execvp(args[0], args);
-                fprintf(stderr, "%s: no se encontró la orden\n", line);
-                exit(-1);
+#endif
+                if (execvp(args[0], args) == -1) {
+                    fprintf(stderr, "%s: no se encontró la orden\n", line);
+                    exit(-1);
+                }
             } else if (pid > 0) {
-                jobs_list[0].pid = pid;
-                jobs_list[0].estado = 'E';
-                strcpy(jobs_list[0].cmd, line);
+                if (isBackground) {
+                    jobs_list_add(pid, 'E', current_cmd);
+#if DEBUG_5
+                    printf("[%d] %d\t%c\t%s\n", NJobs, jobs_list[NJobs].pid,
+                           jobs_list[NJobs].status, jobs_list[NJobs].cmd);
+#endif
+                } else {
+                    jobs_list[0].pid = pid;
+                    jobs_list[0].estado = 'E';
+                    strcpy(jobs_list[0].cmd, line);
+                }
             }
             while (jobs_list[0].pid > 0) {
                 pause();
@@ -404,8 +444,10 @@ void reaper(int signum) {
         } else {
             if (WIFSIGNALED(stat)) {
 #if DEBUG_4
-                printf("[Proceso hijo %d (ps f) finalizado con exit code %d]\n",
-                       end, WTERMSIG(stat));
+                printf(
+                    "[Proceso hijo %d (ps f) finalizado con exit code "
+                    "%d]\n",
+                    end, WTERMSIG(stat));
 #endif
             }
         }
@@ -449,6 +491,7 @@ int main(int argC, char *argV[]) {
     // guardamos la ejecucion del minishell
     strcpy(mi_shell, argV[0]);
     char line[COMMAND_LINE_SIZE];
+    NJobs = 0;
     memset(line, 0, COMMAND_LINE_SIZE);
     /// señales
     signal(SIGCHLD, reaper);
