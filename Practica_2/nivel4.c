@@ -306,7 +306,7 @@ int parse_args(char **args, char *line) {
 
 int execute_line(char *line) {
     char *args[ARGS_SIZE];
-    pid_t pid, stat;
+    pid_t pid/*, stat*/;
     char command_line[COMMAND_LINE_SIZE];
 
     // copiamos comando sin '\n'
