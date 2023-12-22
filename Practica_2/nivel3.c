@@ -159,8 +159,9 @@ int internal_source(char **args) {
         if (fich) {
             while (fgets(linea, COMMAND_LINE_SIZE, fich)) {
                 // pasamos las lineas del fichero a execute_line
-                execute_line(linea);
-                fflush(fich);
+                if (strlen(linea) > 0) {  // Verificar si la línea no está vacía
+                    execute_line(linea);
+                }
             }
             fclose(fich);
             free(linea);
@@ -324,7 +325,7 @@ int execute_line(char *line) {
                         getpid(), args[0]);
                 execvp(args[0], args);
                 fprintf(stderr, "%s: no se encontró la orden\n", line);
-                exit(-1);
+                exit(0);
             } else if (pid > 0) {
                 jobs_list[0].pid = pid;
                 jobs_list[0].estado = 'E';
