@@ -323,7 +323,7 @@ int execute_line(char *line) {
                         GRIS
                         "[execute_line()→ PID hijo: %d(%s)]\n" RESET_FORMATO,
                         getpid(), args[0]);
-                if (strcmp(args[0], "source") == 0) {
+                if (strcmp(args[0], "source\n") == 0) {
                     // Manejo especial para el comando "source"
                     internal_source(args);
                 } else {
