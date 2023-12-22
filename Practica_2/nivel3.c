@@ -323,9 +323,14 @@ int execute_line(char *line) {
                         GRIS
                         "[execute_line()→ PID hijo: %d(%s)]\n" RESET_FORMATO,
                         getpid(), args[0]);
-                execvp(args[0], args);
-                fprintf(stderr, "%s: no se encontró la orden\n", line);
-                exit(0);
+                if (strcmp(args[0], "source") == 0) {
+                    // Manejo especial para el comando "source"
+                    internal_source(args);
+                } else {
+                    execvp(args[0], args);
+                    fprintf(stderr, "%s: no se encontró la orden\n", line);
+                    exit(1);
+                }
             } else if (pid > 0) {
                 jobs_list[0].pid = pid;
                 jobs_list[0].estado = 'E';
@@ -335,6 +340,7 @@ int execute_line(char *line) {
                             "[execute_line()→ Proceso hijo %d (%s) finalizado "
                             "con exit(), estado: %d]\n",
                             pid, command_line, WEXITSTATUS(status));
+                            printf("\n");
                 } else {
                     if (WIFSIGNALED(status)) {
                         fprintf(stderr,
