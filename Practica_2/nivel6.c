@@ -4,8 +4,9 @@
 /* Declaración de debugs */
 #define DEBUG_1 0
 #define DEBUG_0 0
-#define DEBUG_4 1
-#define DEBUG_5 1
+#define DEBUG_4 0
+#define DEBUG_5 0
+#define DEBUG_6 1
 #define _POSIX_C_SOURCE 200112L
 
 /* Declaración de librerias */
@@ -224,7 +225,43 @@ int internal_fg(char **args) {
         "foreground reactivando su ejecución, o uno del background al "
         "foreground ]\n");
 #endif
-    return 1;
+    if (args[1]) {
+        // Extraemos el numero del trabajo que esta en args
+        int pos = 0;
+        for (int i = 0; args[1][i] != '\0'; i++) {
+            pos *= 10;
+            job_index += (int)args[1][i] - 48;
+        }
+
+        if (pos > NJobs && pos < 0) {
+#if DEBUG_6
+            fprintf(stderr, "Error: El trabajo %d no existe\n", pos);
+#endif
+        } else {
+            // Activamos el trabajo
+            if (jobs_list[pos].estado == 'D') {
+                kill(jobs_list[pos].pid, SIGCONT);
+            }
+            char *ptrAux strchr(jobs_list[pos].cmd, '&');
+            *ptrAux = '\0';
+            // Actualizamos el foreground
+            jobs_list[0].pid = jobs_list[pos].pid;
+            jobs_list[0].estado = jobs_list[pos].estado;
+            strcpy(jobs_list[0].cmd, jobs_list[pos].cmd);
+            jobs_list_remove(pos);
+#if DEBUG_6
+            printf("%s\n", jobs_list[0].cmd);
+#endif
+            while (jobs_list[0].pid) {
+                pause();
+            }
+            return 0;
+        }
+    }
+#if DEBUG_6
+    fprintf(stderr, "Error: fg sin argumentos");
+#endif
+    return -1;
 }
 
 int internal_bg(char **args) {
@@ -233,7 +270,7 @@ int internal_bg(char **args) {
         "[internal_bg()→ Esta función reactivará un proceso detenido para que "
         "siga ejecutándose pero en segundo plano]\n");
 #endif
-    return 1;
+    return 0;
 }
 
 /**
