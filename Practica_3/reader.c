@@ -14,14 +14,14 @@ struct my_stack *stack;
 
 int main(int argc, char *argv[]) {
     if (argv[1] == NULL) {
-        fprintf(stderr, "Error: se ha de introducir un nombre de Fichero");
+        fprintf(stderr, "Error: se ha de introducir un nombre de Fichero\n");
         return -1;
     }
 
     stack = my_stack_read(argv[1]);  // Leemos la pila guardada
 
     if (stack == NULL) {
-        fprintf(stderr, "Error: pila leida es vacia");
+        fprintf(stderr, "Error: pila leida es vacia\n");
         return -1;
     }
 
@@ -31,7 +31,12 @@ int main(int argc, char *argv[]) {
     int maximoPila = 0;
     float mediaPila = 0;
 
-    printf("Stack length: %d", my_stack_len(stack));
+    // Limitamos la longitud de la pila cuando es mayor que 10
+    if (longitudPila > 10) {
+        longitudPila = 10;
+    }
+
+    printf("Stack length: %d\n", longitudPila);
 
     for (int i = 0; i < longitudPila; i++) {
         // Extraemos data de la pila
@@ -52,9 +57,8 @@ int main(int argc, char *argv[]) {
 
     mediaPila = (float)sumaTotalPila / (float)N_THREADS;
 
-    printf("Items: %d Sum: %d Min: %d Max: %d Average: %f\n",
-           my_stack_len(stack), sumaTotalPila, minimoPila, maximoPila,
-           mediaPila);
+    printf("Items: %d Sum: %d Min: %d Max: %d Average: %f\n", longitudPila,
+           sumaTotalPila, minimoPila, maximoPila, mediaPila);
 
     my_stack_purge(stack);
 }
