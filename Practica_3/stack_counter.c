@@ -25,7 +25,8 @@ int main(int arg_cont, char *argv[]) {
         return -1;
     }
 
-    stack = my_stack_read(argv[1]);
+    stack = my_stack_read(argv[1]);  // Leemos la pila guardada
+
     // Inicializamos a 0 en caso de no estar inicializada
     if (stack = NULL) {
         stack = my_stack_init(1);
