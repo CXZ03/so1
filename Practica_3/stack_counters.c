@@ -24,6 +24,16 @@ int main(int arg_cont, char *argv[]) {
         fprintf(stderr, "Error: se ha de introducir un nombre de Fichero\n");
         return -1;
     }
+    // Creamos el fichero en el caso de que no exista
+    int ficheroPila = open(argv[1], O_CREAT | S_IRUSR | S_IWUSR);
+    if (ficheroPila == -1) {
+        fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
+        return -1;
+    }
+    if (close(ficheroPila) == -1) {
+        fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
+        return -1;
+    }
 
     // Imprimimos los parametros
     printf("Threads: %d, Iterations: %d\n", N_THREADS, N_ITERATION);
@@ -39,8 +49,8 @@ int main(int arg_cont, char *argv[]) {
     int *data = 0;
     // Inicializamos a 0 en caso de no estar inicializada
     if (stack == NULL) {
-        stack = my_stack_init(1);
-        for (int i = my_stack_len(stack); i < 10; i++) {
+        stack = my_stack_init(sizeof *data);
+        for (int i = 0; i < 10; i++) {
             data = malloc(sizeof *data);
             *data = 0;
             my_stack_push(stack, data);
@@ -48,7 +58,7 @@ int main(int arg_cont, char *argv[]) {
     }
 
     // Si la pila tiene menos de 10, agregar restantes apuntando a 0
-    if (my_stack_len(stack) < 10) {
+    else if (my_stack_len(stack) < 10) {
         for (int i = my_stack_len(stack); i < 10; i++) {
             data = malloc(sizeof *data);
             *data = 0;
@@ -60,9 +70,6 @@ int main(int arg_cont, char *argv[]) {
     printf("\nnew stack lenght: %d\n", longitudStack);
     imprimirContenidoStack(stack->top);
     printf("\n");
-    // for (int i = 0; i < longitudStack - 1; i++) {
-    //     printf("%d\n", *((int *)(stack->top->data++)));
-    // }
 
     // Creamos los hilos
     pthread_t threads[N_THREADS];
@@ -78,9 +85,6 @@ int main(int arg_cont, char *argv[]) {
     longitudStack = my_stack_len(stack);
     printf("\nfinal stack lenght: %d\n", longitudStack);
     imprimirContenidoStack(stack->top);
-    // for (int i = 0; i < longitudStack - 1; i++) {
-    //     printf("%d\n", *((int *)(stack->top->data++)));
-    // }
 
     printf("\nWritten elements from stack to file: %d\n",
            my_stack_write(stack, argv[1]));
