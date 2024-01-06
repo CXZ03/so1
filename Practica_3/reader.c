@@ -1,5 +1,5 @@
 /* Librerias */
-#include <limitis.h>
+#include <limits.h>
 #include <stdio.h>
 
 #include "my_lib.h"
@@ -13,7 +13,7 @@ struct my_stack *stack;
 /* Funciones */
 
 int main(int argc, char *argv[]) {
-    if (argv[1] = NULL) {
+    if (argv[1] == NULL) {
         fprintf(stderr, "Error: se ha de introducir un nombre de Fichero");
         return -1;
     }
@@ -25,6 +25,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    int longitudPila = my_stack_len(stack);
     int sumaTotalPila = 0;
     int minimoPila = INT_MAX;
     int maximoPila = 0;
@@ -32,10 +33,10 @@ int main(int argc, char *argv[]) {
 
     printf("Stack length: %d", my_stack_len(stack));
 
-    for (int i = 0; i < N_THREADS; i++) {
+    for (int i = 0; i < longitudPila; i++) {
         // Extraemos data de la pila
         int *data;
-        data = my_stack_pop;
+        data = (int *)my_stack_pop(stack);
 
         // Actualizamos los valores de la métrica
         sumaTotalPila += *data;

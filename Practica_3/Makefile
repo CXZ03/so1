@@ -26,4 +26,3 @@ reader: reader.o $(LIBRARIES) $(INCLUDES)
 .PHONY: clean
 clean:
 	rm -rf *.o *~ $(PROGRAMS)
- 
