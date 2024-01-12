@@ -1,5 +1,5 @@
 /**
- * Practica 2: Semana 1
+ * Practica 2: Semana 2
  * Autores: Guillem, Elena, Xiaozhe
  * Equipo: AguacateLovers
  * Grupo: 2, 202
@@ -25,7 +25,8 @@
 #define GRIS_T "\x1b[94m"
 #define ROJO_T "\x1b[31m"
 
-#define DEBUG_1 1
+#define DEBUG_1 0
+#define DEBUG_2 1
 
 /* Variables */
 char line[COMMAND_LINE_SIZE];
@@ -43,6 +44,7 @@ int internal_fg(char **args);
 int internal_bg(char **args);
 
 int imprimir_prompt();
+int internal_cd_avanzado(char **args);
 
 /**
  * Función: int main(int argC, char *argV[])
@@ -244,6 +246,28 @@ int internal_cd(char **args) {
     fprintf(stderr, GRIS_T
             "[internal_cd()→ Esta función cambiará de directorio]\n" RESET);
 #endif
+    if (args == NULL) {
+        fprintf(stderr,
+                ROJO_T "Error internal_cd(): args NULL pointer\n" RESET);
+    }
+    // int longitudArgs = sizeof(args) / sizeof(*args);
+    // printf("longitudArgs: %d", longitudArgs);
+    if (args[1] == NULL) {
+        if (chdir(getenv("HOME"))) {
+            fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
+            return -1;
+        }
+    } else if (args[2] == NULL) {
+        if (chdir(args[1])) {
+            fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
+            return -1;
+        }
+    } else {
+        if (internal_cd_avanzado(args) == -1) {
+            fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
+            return -1;
+        }
+    }
     return 0;
 }
 
@@ -264,6 +288,28 @@ int internal_export(char **args) {
             "[internal_cd()→ Esta función asignará valores a variablescd de "
             "entorno]\n" RESET);
 #endif
+    const char *IGUAL = "=";
+    char *nombre, *valor;
+    if (args[1] == NULL) {
+        fprintf(stderr, "Error de sintaxis\n");
+    }
+    nombre = strtok(args[1], IGUAL);
+    valor = strtok(NULL, IGUAL);
+    if (nombre == NULL || valor == NULL) {
+        fprintf(stderr, "Error de sintaxis\n");
+    }
+#if DEBUG_2
+    printf("[internal_export() → nombre: %s]\n", nombre);
+    printf("[internal_export() → valor: %s]\n", valor);
+    printf("[internal_export() → antiguo valor para %s: %s]\n", nombre,
+           getenv(nombre));
+#endif
+    setenv(nombre, valor, 1);
+#if DEBUG_2
+    printf("[internal_export() → nuevo valor para %s: %s]\n", nombre,
+           getenv(nombre));
+#endif
+
     return 0;
 }
 
@@ -364,4 +410,75 @@ int imprimir_prompt() {
     printf(VERDE_T "%s" BLANCO_T ":" CYAN_T "%s" BLANCO_T "%c " RESET,
            getenv("USER"), getenv("PWD"), PROMPT);
     return 0;
+}
+
+int internal_cd_avanzado(char **args) {
+    char *path;
+    char *punteroPath = path;
+    char **punteroArgs;
+    int longitudArgs = strlen(args[1]);
+    printf("\"\'\\  %c  %c", '\"', '"');
+    // Caso doble comillas
+    if (*args[1] == '\"') {
+        punteroArgs = &args[1];
+        while (punteroArgs != NULL) {
+            while (*punteroArgs != NULL) {
+                *punteroPath = **punteroArgs;
+                punteroPath++;
+                *punteroArgs++;
+                if (**punteroArgs == '\"') {
+                    *punteroPath = '\0';
+                    if (chdir(path)) {
+                        fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
+                        return -1;
+                    }
+                    return 0;
+                }
+            }
+            punteroArgs++;
+        }
+    }
+    // Caso una comilla
+    else if (*args[1] == '\'') {
+        punteroArgs = &args[1];
+        while (punteroArgs != NULL) {
+            while (*punteroArgs != NULL) {
+                *punteroPath = **punteroArgs;
+                punteroPath++;
+                *punteroArgs++;
+                if (**punteroArgs == '\'') {
+                    *punteroPath = '\0';
+                    if (chdir(path)) {
+                        fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
+                        return -1;
+                    }
+                    return 0;
+                }
+            }
+            punteroArgs++;
+        }
+    }
+    // Caso barra inversa
+    else if (args[1][longitudArgs - 1] == '\\') {
+        punteroArgs = &args[1][longitudArgs - 1];
+        while (punteroArgs != NULL) {
+            while (*punteroArgs != NULL) {
+                if (*punteroArgs == '\\') {
+                    punteroArgs++;
+                } else {
+                    *punteroPath = **punteroArgs;
+                    punteroPath++;
+                    *punteroArgs++;
+                }
+            }
+            punteroArgs++;
+        }
+        if (chdir(path)) {
+            fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
+            return -1;
+        }
+        return 0;
+    }
+    fprintf(stderr, ROJO_T "Error internal_cd_avanzado(): " RESET);
+    return -1;
 }
