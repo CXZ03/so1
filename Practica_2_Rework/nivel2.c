@@ -406,79 +406,71 @@ int imprimir_prompt() {
     if (fflush(stdout) != 0) {
         fprintf(stderr, ROJO_T "Error fflush(): \n" RESET);
     }
+    char *cwd = malloc(COMMAND_LINE_SIZE * sizeof(*cwd));
     // Imprimimos el prompt personalizado
     printf(VERDE_T "%s" BLANCO_T ":" CYAN_T "%s" BLANCO_T "%c " RESET,
-           getenv("USER"), getenv("PWD"), PROMPT);
+           getenv("USER"), getcwd(cwd, COMMAND_LINE_SIZE), PROMPT);
+    free(cwd);
     return 0;
 }
 
 int internal_cd_avanzado(char **args) {
-    char *path;
-    char *punteroPath = path;
-    char **punteroArgs;
-    int longitudArgs = strlen(args[1]);
-    printf("\"\'\\  %c  %c", '\"', '"');
-    // Caso doble comillas
-    if (*args[1] == '\"') {
-        punteroArgs = &args[1];
-        while (punteroArgs != NULL) {
-            while (*punteroArgs != NULL) {
-                *punteroPath = **punteroArgs;
-                punteroPath++;
-                *punteroArgs++;
-                if (**punteroArgs == '\"') {
-                    *punteroPath = '\0';
-                    if (chdir(path)) {
-                        fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
-                        return -1;
-                    }
-                    return 0;
-                }
+    char *path = malloc(sizeof(*path) * COMMAND_LINE_SIZE);
+    char *ptrToken = malloc(sizeof(*ptrToken) * ARGS_SIZE);
+    char **ptrArgs = args;
+    ptrArgs++;  // Nos ubicamos en args[1]
+    // Caso comilla simple
+    if (**ptrArgs == '\'') {
+        ptrToken = *ptrArgs;
+        ptrToken++;  // Nos saltamos la comilla simple
+        strcat(path, ptrToken);
+        ptrArgs++;  // Siguiente token
+        while (ptrArgs != NULL) {
+            ptrToken = *ptrArgs;
+            if (ptrToken[strlen(ptrToken) - 1] == '\'') {
+                ptrToken[strlen(ptrToken) - 1] = '\0';  // Quitamos la comilla
+                                                         // simple
             }
-            punteroArgs++;
+            strcat(path, ptrToken);
+            ptrArgs++;  // Siguiente token
         }
     }
-    // Caso una comilla
-    else if (*args[1] == '\'') {
-        punteroArgs = &args[1];
-        while (punteroArgs != NULL) {
-            while (*punteroArgs != NULL) {
-                *punteroPath = **punteroArgs;
-                punteroPath++;
-                *punteroArgs++;
-                if (**punteroArgs == '\'') {
-                    *punteroPath = '\0';
-                    if (chdir(path)) {
-                        fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
-                        return -1;
-                    }
-                    return 0;
-                }
+    // Caso comilla doble
+    else if (**ptrArgs == '\"') {
+        ptrToken = *ptrArgs;
+        ptrToken++;  // Nos saltamos la comilla doble
+        strcat(path, ptrToken);
+        ptrArgs++;  // Siguiente token
+        while (ptrArgs != NULL) {
+            ptrToken = *ptrArgs;
+            if (ptrToken[strlen(ptrToken) - 1] == '\"') {
+                ptrToken[strlen(ptrToken) - 1] = '\0';  // Quitamos la comilla
+                                                         // doble
             }
-            punteroArgs++;
+            strcat(path, ptrToken);
+            ptrArgs++;  // Siguiente token
         }
     }
-    // Caso barra inversa
-    else if (args[1][longitudArgs - 1] == '\\') {
-        punteroArgs = &args[1][longitudArgs - 1];
-        while (punteroArgs != NULL) {
-            while (*punteroArgs != NULL) {
-                if (*punteroArgs == '\\') {
-                    punteroArgs++;
-                } else {
-                    *punteroPath = **punteroArgs;
-                    punteroPath++;
-                    *punteroArgs++;
-                }
+    // Caso barra
+    else if (*ptrArgs[strlen(ptrArgs[1]) - 1] == '\\') {
+        ptrToken = *ptrArgs;
+        ptrToken[strlen(ptrToken) - 1] = '\0';  // Quitamos la barra
+        strcat(path, ptrToken);
+        ptrArgs++;  // Siguiente token
+        while (ptrArgs != NULL) {
+            if (*ptrArgs[strlen(ptrArgs[1]) - 1] == '\\') {
+                ptrToken = *ptrArgs;
+                ptrToken[strlen(ptrToken) - 1] = '\0';  // Quitamos la barra
             }
-            punteroArgs++;
+            strcat(path, ptrToken);
+            ptrArgs++;
         }
-        if (chdir(path)) {
-            fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
-            return -1;
-        }
-        return 0;
     }
-    fprintf(stderr, ROJO_T "Error internal_cd_avanzado(): " RESET);
-    return -1;
+    if (chdir(path)) {
+        fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
+        return -1;
+    }
+    free(path);
+    free(ptrToken);
+    return 0;
 }
