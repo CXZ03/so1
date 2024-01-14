@@ -60,9 +60,10 @@ int main() {
     while (1) {
         if (read_line(line)) {
             if (execute_line(line) == -1) {
-                fprintf(stderr, ROJO_T "Error execute_line(): \n" RESET);
-                return -1;
+                fprintf(stderr, ROJO_T "Error main(): execute_line() \n" RESET);
             }
+        } else {
+            fprintf(stderr, ROJO_T "Error main(): read_line() \n" RESET);
         }
     }
     return 0;
@@ -83,7 +84,7 @@ int main() {
  */
 char *read_line(char *line) {
     if (imprimir_prompt() != 0) {
-        fprintf(stderr, ROJO_T "Error imprimir_prompt(): \n" RESET);
+        fprintf(stderr, ROJO_T "Error read_line(): imprimir_prompt() \n" RESET);
         return NULL;
     }
     line = fgets(line, COMMAND_LINE_SIZE, stdin);
@@ -94,7 +95,7 @@ char *read_line(char *line) {
             printf("Bye Bye\n");
             exit(0);
         }
-        fprintf(stderr, ROJO_T "Error fgets(): \n" RESET);
+        fprintf(stderr, ROJO_T "Error read_line(): fgets() \n" RESET);
         return NULL;
     }
     char *punteroLineFeed = strchr(line, '\n');
@@ -121,12 +122,13 @@ int execute_line(char *line) {
     char *args[ARGS_SIZE];
     int cantidadDeToken = parse_args(args, line);
     if (cantidadDeToken == -1) {
-        fprintf(stderr, ROJO_T "Error parse_args(): \n" RESET);
+        fprintf(stderr, ROJO_T "Error execute_line(): parse_args() \n" RESET);
         return -1;
     }
     if (cantidadDeToken > 0) {
         if (check_internal(args) == -1) {
-            fprintf(stderr, ROJO_T "Error check_internal(): \n" RESET);
+            fprintf(stderr,
+                    ROJO_T "Error execute_line(): check_internal() \n" RESET);
             return -1;
         }
     }
@@ -189,37 +191,43 @@ int parse_args(char **args, char *line) {
 int check_internal(char **args) {
     if (strcmp(args[0], "cd") == 0) {
         if (internal_cd(args) == -1) {
-            fprintf(stderr, ROJO_T "Error internal_cd(): \n" RESET);
+            fprintf(stderr,
+                    ROJO_T "Error check_internal(): internal_cd() \n" RESET);
             return -1;
         }
         return 1;
     } else if (strcmp(args[0], "export") == 0) {
         if (internal_export(args) == -1) {
-            fprintf(stderr, ROJO_T "Error internal_export(): \n" RESET);
+            fprintf(stderr, ROJO_T
+                    "Error check_internal(): internal_export() \n" RESET);
             return -1;
         }
         return 1;
     } else if (strcmp(args[0], "source") == 0) {
         if (internal_source(args) == -1) {
-            fprintf(stderr, ROJO_T "Error internal_source(): \n" RESET);
+            fprintf(stderr, ROJO_T
+                    "Error check_internal(): internal_source() \n" RESET);
             return -1;
         }
         return 1;
     } else if (strcmp(args[0], "jobs") == 0) {
         if (internal_jobs() == -1) {
-            fprintf(stderr, ROJO_T "Error internal_jobs(): \n" RESET);
+            fprintf(stderr,
+                    ROJO_T "Error check_internal(): internal_jobs() \n" RESET);
             return -1;
         }
         return 1;
     } else if (strcmp(args[0], "bg") == 0) {
         if (internal_bg(args) == -1) {
-            fprintf(stderr, ROJO_T "Error internal_bg(): \n" RESET);
+            fprintf(stderr,
+                    ROJO_T "Error check_internal(): internal_bg() \n" RESET);
             return -1;
         }
         return 1;
     } else if (strcmp(args[0], "fg") == 0) {
         if (internal_fg(args) == -1) {
-            fprintf(stderr, ROJO_T "Error internal_fg(): \n" RESET);
+            fprintf(stderr,
+                    ROJO_T "Error check_internal(): internal_fg() \n" RESET);
             return -1;
         }
         return 1;
@@ -247,24 +255,23 @@ int internal_cd(char **args) {
             "[internal_cd()→ Esta función cambiará de directorio]\n" RESET);
 #endif
     if (args == NULL) {
-        fprintf(stderr,
-                ROJO_T "Error internal_cd(): args NULL pointer\n" RESET);
+        fprintf(stderr, ROJO_T "Error internal_cd(): args == NULL\n" RESET);
     }
     // int longitudArgs = sizeof(args) / sizeof(*args);
     // printf("longitudArgs: %d", longitudArgs);
     if (args[1] == NULL) {
         if (chdir(getenv("HOME"))) {
-            fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
+            fprintf(stderr, ROJO_T "Error internal_cd(): chdir() \n" RESET);
             return -1;
         }
     } else if (args[2] == NULL) {
         if (chdir(args[1])) {
-            fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
+            fprintf(stderr, ROJO_T "Error internal_cd(): chdir() \n" RESET);
             return -1;
         }
     } else {
         if (internal_cd_avanzado(args) == -1) {
-            fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
+            fprintf(stderr, ROJO_T "Error internal_cd(): chdir() \n" RESET);
             return -1;
         }
     }
@@ -291,12 +298,12 @@ int internal_export(char **args) {
     const char *IGUAL = "=";
     char *nombre, *valor;
     if (args[1] == NULL) {
-        fprintf(stderr, "Error de sintaxis\n");
+        fprintf(stderr, "Error internal_export(): Error de sintaxis\n");
     }
     nombre = strtok(args[1], IGUAL);
     valor = strtok(NULL, IGUAL);
     if (nombre == NULL || valor == NULL) {
-        fprintf(stderr, "Error de sintaxis\n");
+        fprintf(stderr, "Error internal_export(): Error de sintaxis\n");
     }
 #if DEBUG_2
     printf("[internal_export() → nombre: %s]\n", nombre);
@@ -404,7 +411,7 @@ int imprimir_prompt() {
     // Vaciado del buffer
     sleep(1);
     if (fflush(stdout) != 0) {
-        fprintf(stderr, ROJO_T "Error fflush(): \n" RESET);
+        fprintf(stderr, ROJO_T "Error imprimir_prompt(): fflush() \n" RESET);
     }
     char *cwd = malloc(COMMAND_LINE_SIZE * sizeof(*cwd));
     // Imprimimos el prompt personalizado
@@ -415,62 +422,31 @@ int imprimir_prompt() {
 }
 
 int internal_cd_avanzado(char **args) {
-    char *path = malloc(sizeof(*path) * COMMAND_LINE_SIZE);
-    char *ptrToken = malloc(sizeof(*ptrToken) * ARGS_SIZE);
-    char **ptrArgs = args;
-    ptrArgs++;  // Nos ubicamos en args[1]
-    // Caso comilla simple
-    if (**ptrArgs == '\'') {
-        ptrToken = *ptrArgs;
-        ptrToken++;  // Nos saltamos la comilla simple
-        strcat(path, ptrToken);
-        ptrArgs++;  // Siguiente token
-        while (ptrArgs != NULL) {
-            ptrToken = *ptrArgs;
-            if (ptrToken[strlen(ptrToken) - 1] == '\'') {
-                ptrToken[strlen(ptrToken) - 1] = '\0';  // Quitamos la comilla
-                                                         // simple
-            }
-            strcat(path, ptrToken);
-            ptrArgs++;  // Siguiente token
-        }
+    // Crear un charArray vacio para guardar los argumentos
+    char *const path = calloc(COMMAND_LINE_SIZE + 1, sizeof(*path));
+
+    int i = 1;  // saltarse el "cd"
+    strcat(path, args[i++]);
+    for (; args[i] != NULL; i++) {
+        strcat(path, " ");
+        strcat(path, args[i]);
     }
-    // Caso comilla doble
-    else if (**ptrArgs == '\"') {
-        ptrToken = *ptrArgs;
-        ptrToken++;  // Nos saltamos la comilla doble
-        strcat(path, ptrToken);
-        ptrArgs++;  // Siguiente token
-        while (ptrArgs != NULL) {
-            ptrToken = *ptrArgs;
-            if (ptrToken[strlen(ptrToken) - 1] == '\"') {
-                ptrToken[strlen(ptrToken) - 1] = '\0';  // Quitamos la comilla
-                                                         // doble
-            }
-            strcat(path, ptrToken);
-            ptrArgs++;  // Siguiente token
-        }
+    printf("path: %s\n", path);
+
+    // Buscar caracter especial
+    char *ptrPath;
+    ptrPath = strchr(path, '\'');
+    if (ptrPath) {
+        // Caso comilla simple
     }
-    // Caso barra
-    else if (*ptrArgs[strlen(ptrArgs[1]) - 1] == '\\') {
-        ptrToken = *ptrArgs;
-        ptrToken[strlen(ptrToken) - 1] = '\0';  // Quitamos la barra
-        strcat(path, ptrToken);
-        ptrArgs++;  // Siguiente token
-        while (ptrArgs != NULL) {
-            if (*ptrArgs[strlen(ptrArgs[1]) - 1] == '\\') {
-                ptrToken = *ptrArgs;
-                ptrToken[strlen(ptrToken) - 1] = '\0';  // Quitamos la barra
-            }
-            strcat(path, ptrToken);
-            ptrArgs++;
-        }
+    ptrPath = strchr(path, '\"');
+    if (ptrPath) {
+        // Caso comilla doble
     }
-    if (chdir(path)) {
-        fprintf(stderr, ROJO_T "Error chdir(): \n" RESET);
-        return -1;
+    ptrPath = strchr(path, '\\');
+    if (ptrPath) {
+        // Caso barra
     }
-    free(path);
-    free(ptrToken);
+
     return 0;
 }
