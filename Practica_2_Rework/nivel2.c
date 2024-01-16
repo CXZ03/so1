@@ -8,6 +8,7 @@
 /* Librerias */
 #define _POSIX_C_SOURCE 200112L  // Version del estándar C
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -232,7 +233,9 @@ int check_internal(char **args) {
         }
         return 1;
     } else if (strcmp(args[0], "exit") == 0) {
+#if DEBUG_1
         printf("Bye Bye\n");
+#endif
         exit(0);
     }
     return 0;
@@ -257,24 +260,36 @@ int internal_cd(char **args) {
     if (args == NULL) {
         fprintf(stderr, ROJO_T "Error internal_cd(): args == NULL\n" RESET);
     }
-    // int longitudArgs = sizeof(args) / sizeof(*args);
-    // printf("longitudArgs: %d", longitudArgs);
     if (args[1] == NULL) {
         if (chdir(getenv("HOME"))) {
-            fprintf(stderr, ROJO_T "Error internal_cd(): chdir() \n" RESET);
+            fprintf(stderr, ROJO_T
+                    "Error internal_cd(): chdir(): No such file or "
+                    "directory\n" RESET);
             return -1;
         }
     } else if (args[2] == NULL) {
         if (chdir(args[1])) {
-            fprintf(stderr, ROJO_T "Error internal_cd(): chdir() \n" RESET);
+            fprintf(stderr, ROJO_T
+                    "Error internal_cd(): chdir(): No such file or "
+                    "directory\n" RESET);
             return -1;
         }
     } else {
         if (internal_cd_avanzado(args) == -1) {
-            fprintf(stderr, ROJO_T "Error internal_cd(): chdir() \n" RESET);
+            fprintf(stderr, ROJO_T
+                    "Error internal_cd(): internal_cd_avanzado()\n" RESET);
             return -1;
         }
     }
+#if DEBUG_2
+    char *const cwd = malloc((COMMAND_LINE_SIZE + 1) * sizeof(*cwd));
+    if (getcwd(cwd, COMMAND_LINE_SIZE) == NULL) {
+        fprintf(stderr, ROJO_T "Error internal_cd: getcwd(): \n" RESET);
+        return -1;
+    }
+    fprintf(stderr, GRIS_T "[internal_cd() → %s]\n" RESET, cwd);
+    free(cwd);
+#endif
     return 0;
 }
 
@@ -298,23 +313,29 @@ int internal_export(char **args) {
     const char *IGUAL = "=";
     char *nombre, *valor;
     if (args[1] == NULL) {
-        fprintf(stderr, "Error internal_export(): Error de sintaxis\n");
+        fprintf(stderr,
+                ROJO_T "Error internal_export(): Error de sintaxis\n" RESET);
+        return -1;
     }
     nombre = strtok(args[1], IGUAL);
     valor = strtok(NULL, IGUAL);
+#if DEBUG_2
+    printf(GRIS_T "[internal_export() → nombre: %s]\n" RESET, nombre);
+    printf(GRIS_T "[internal_export() → valor: %s]\n" RESET, valor);
+#endif
     if (nombre == NULL || valor == NULL) {
-        fprintf(stderr, "Error internal_export(): Error de sintaxis\n");
+        fprintf(stderr,
+                ROJO_T "Error internal_export(): Error de sintaxis\n" RESET);
+        return -1;
     }
 #if DEBUG_2
-    printf("[internal_export() → nombre: %s]\n", nombre);
-    printf("[internal_export() → valor: %s]\n", valor);
-    printf("[internal_export() → antiguo valor para %s: %s]\n", nombre,
-           getenv(nombre));
+    printf(GRIS_T "[internal_export() → antiguo valor para %s: %s]\n" RESET,
+           nombre, getenv(nombre));
 #endif
     setenv(nombre, valor, 1);
 #if DEBUG_2
-    printf("[internal_export() → nuevo valor para %s: %s]\n", nombre,
-           getenv(nombre));
+    printf(GRIS_T "[internal_export() → nuevo valor para %s: %s]\n" RESET,
+           nombre, getenv(nombre));
 #endif
 
     return 0;
@@ -422,8 +443,9 @@ int imprimir_prompt() {
 }
 
 int internal_cd_avanzado(char **args) {
+    bool error = false;
     // Crear un charArray vacio para guardar los argumentos
-    char *const path = calloc(COMMAND_LINE_SIZE + 1, sizeof(*path));
+    char *const path = calloc((COMMAND_LINE_SIZE + 1), sizeof(*path));
 
     int i = 1;  // saltarse el "cd"
     strcat(path, args[i++]);
@@ -431,22 +453,58 @@ int internal_cd_avanzado(char **args) {
         strcat(path, " ");
         strcat(path, args[i]);
     }
-    printf("path: %s\n", path);
 
     // Buscar caracter especial
     char *ptrPath;
+    bool pathTratado = false;
     ptrPath = strchr(path, '\'');
-    if (ptrPath) {
+    if (ptrPath && !pathTratado) {
         // Caso comilla simple
+        ptrPath++;
+        strcpy(path, ptrPath);
+        ptrPath = strchr(path, '\'');
+        if (!ptrPath) {
+            fprintf(stderr, ROJO_T
+                    "Error internal_cd_avanzado(): falta segunda \\\'\n" RESET);
+            error = true;
+        }
+        *ptrPath = '\0';
+        pathTratado = true;
     }
     ptrPath = strchr(path, '\"');
-    if (ptrPath) {
+    if (ptrPath && !pathTratado) {
         // Caso comilla doble
+        ptrPath++;
+        strcpy(path, ptrPath);
+        ptrPath = strchr(path, '\"');
+        if (!ptrPath) {
+            fprintf(stderr, ROJO_T
+                    "Error internal_cd_avanzado(): falta segunda \\\"\n" RESET);
+            error = true;
+        }
+        *ptrPath = '\0';
+        pathTratado = true;
     }
     ptrPath = strchr(path, '\\');
-    if (ptrPath) {
+    if (ptrPath && !pathTratado) {
         // Caso barra
+        strcat(path, "\\");
+        while (ptrPath) {
+            *ptrPath = '\0';
+            ptrPath++;
+            strcat(path, ptrPath);
+            ptrPath = strchr(ptrPath, '\\');
+        }
+        pathTratado = true;
     }
-
-    return 0;
+    if (!error) {
+        if (chdir(path)) {
+            fprintf(stderr, ROJO_T
+                    "Error internal_cd_avanzado(): chdir(): No such file or "
+                    "directory\n" RESET);
+            error = true;
+        }
+    }
+    free(path);
+    return error ? -1 : 0;
 }
