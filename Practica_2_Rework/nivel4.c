@@ -1,13 +1,15 @@
 /**
- * Practica 2: Semana 3
- * Autores: Guillem, Elena, Xiaozhe
- * Equipo: AguacateLovers
- * Grupo: 2, 202
+ * Practica 2:      Semana 4
+ * Autores:         Guillem, Elena, Xiaozhe
+ * Equipo:          AguacateLovers
+ * Grupo grande:    2
+ * Grupo mediano:   202
  */
 
 /* Librerias */
 #define _POSIX_C_SOURCE 200112L  // Version del estándar C
 
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,7 +33,8 @@
 
 #define DEBUG_1 0
 #define DEBUG_2 0
-#define DEBUG_3 1
+#define DEBUG_3 0
+#define DEBUG_4 1
 
 /* Estructuras */
 struct info_job {
@@ -57,6 +60,8 @@ int internal_source(char **args);
 int internal_jobs();
 int internal_fg(char **args);
 int internal_bg(char **args);
+void reaper(int signum);
+void ctrlc(int signum);
 
 int imprimir_prompt();
 int internal_cd_avanzado(char **args);
@@ -76,8 +81,11 @@ int main(int argc, char *argv[]) {
     jobs_list[0].pid = 0;
     jobs_list[0].estado = 'N';
     strcpy(jobs_list[0].cmd, "");
-    // guardamos la ejecucion del minishell
+    // Guardamos la ejecucion del minishell
     strcpy(mi_shell, argv[0]);
+    // Inicializamos las señales
+    signal(SIGCHLD, reaper);
+    signal(SIGINT, ctrlc);
     while (1) {
         if (read_line(line)) {
             if (execute_line(line) == -1) {
@@ -113,7 +121,9 @@ char *read_line(char *line) {
         // Caso ctrl + D
         if (feof(stdin)) {
             printf("\r");
+#if DEBUG_1
             printf("Bye Bye\n");
+#endif
             exit(0);
         }
         fprintf(stderr, ROJO_T "Error read_line(): fgets() \n" RESET);
@@ -168,6 +178,8 @@ int execute_line(char *line) {
                 pid = fork();
                 if (pid == 0) {
                     // Proceso hijo
+                    signal(SIGCHLD, SIG_DFL);
+                    signal(SIGINT, SIG_IGN);  // Ignora el ctrl + C
 #if DEBUG_3
                     fprintf(stderr,
                             GRIS_T
@@ -207,6 +219,10 @@ int execute_line(char *line) {
                 } else {
                     fprintf(stderr,
                             ROJO_T "Error execute_line(): fork()\n" RESET);
+                }
+                // Esperar señal de los procesos hijos
+                while (jobs_list[0].pid > 0) {
+                    pause();
                 }
                 break;
             case -1:
@@ -526,6 +542,92 @@ int internal_bg(char **args) {
 }
 
 /**
+ * Función: void reaper(int signum)
+ * ---------------------------------------
+ * Descrpción:
+ *   Manejador propia para la señal SIGCHLD.
+ *
+ * Argumentos:
+ *   - signum: número de la señal recibida
+ *
+ * Salida:
+ *   - void
+ */
+void reaper(int signum) {
+    signal(SIGCHLD, reaper);
+    pid_t endedPid;
+    int status;
+    while ((endedPid = waitpid(-1, &status, WNOHANG)) > 0) {
+        // Si se ha acabado un hijo fg restaura los valores del fg
+        if (endedPid == jobs_list[0].pid) {
+            jobs_list[0].pid = 0;
+            jobs_list[0].estado = 'F';
+            strcpy(jobs_list[0].cmd, "");
+        }
+        if (WIFEXITED(status)) {
+#if DEBUG_4
+            printf("[Proceso hijo %d () finalizado con exit code %d]\n",
+                   endedPid, WEXITSTATUS(status));
+#endif
+        } else if (WIFSIGNALED(status)) {
+#if DEBUG_4
+            printf("[Proceso hijo %d () finalizado con exit code %d]\n",
+                   endedPid, WTERMSIG(status));
+#endif
+        }
+    }
+}
+
+/**
+ * Función: void ctrlc(int signum)
+ * -----------------------------------------------------------------------------
+ * Descrpción:
+ *   Manejador propia para la señal SIGINT (ctrl + c).
+ *
+ * Argumentos:
+ *   - signum: número de la señal recibida
+ *
+ * Salida:
+ *   - void
+ */
+void ctrlc(int signum) {
+    // Alinear el prompt
+    printf("\n");
+    fflush(stdout);
+
+    signal(SIGINT, ctrlc);
+    if (jobs_list[0].pid > 0) {
+        // Hay un proceso en el fg
+        if (strcmp(jobs_list[0].cmd, mi_shell)) {
+            // El proceso no es el del minishell
+#if DEBUG_4
+            printf("la señal no es del minishell\n");
+#endif
+            kill(jobs_list[0].pid, SIGTERM);
+        } else {
+#if DEBUG_4
+            fprintf(stderr,
+                    "Señal SIGTERM no enviada debido a que el proceso en "
+                    "foreground es el shell\n");
+#endif
+        }
+    } else {
+#if DEBUG_4
+        fprintf(stderr,
+                GRIS_T
+                "[ctrlc()→ Soy el proceso con PID %d (%s), el proceso en "
+                "foreground es %d (%s)]\n" RESET,
+                getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
+        fprintf(stderr,
+                GRIS_T
+                "[ctrlc()→ Señal %d no enviada por %d (%s) debido a que no hay "
+                "proceso en foreground]\n" RESET,
+                SIGTERM, getpid(), mi_shell);
+#endif
+    }
+}
+
+/**
  * Función: int imprimir_prompt()
  * ---------------------------------------
  * Descrpción:
@@ -533,7 +635,7 @@ int internal_bg(char **args) {
  * directorio actual.
  *
  * Salida:
- *  - int: 0 salida exitosa.
+ *   - int: 0 salida exitosa.
  */
 int imprimir_prompt() {
     // Vaciado del buffer
@@ -549,6 +651,17 @@ int imprimir_prompt() {
     return 0;
 }
 
+/**
+ * Función: int internal_cd_avanzado(char **args)
+ * ---------------------------------------
+ * Descrpción:
+ *   Extensión de internal_cd() para tratar casos que se emplea \', \" y \\
+ *
+ * Argumentos:
+ *   - args: argumentos de la consola.
+ * Salida:
+ *   - int: 0 salida exitosa, -1 salida fallida.
+ */
 int internal_cd_avanzado(char **args) {
     bool error = false;
     // Crear un charArray vacio para guardar los argumentos
