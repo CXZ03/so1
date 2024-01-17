@@ -525,11 +525,14 @@ int internal_fg(char **args) {
             "foreground]\n" RESET);
 #endif
     if (args[1] == NULL) {
-        fprintf(stderr, ROJO_T "Error internal_fg(): falta argumento" RESET);
+        fprintf(stderr, ROJO_T "Error internal_fg(): falta argumento\n" RESET);
         return -1;
     }
     int posJob = atoi(args[1]);
-    if (posJob <= 0 && posJob >= N_JOBS) {
+    printf("args[1]: %s\n", args[1]);
+    printf("posJob: %d\n", posJob);
+    printf("n_job: %d\n", n_job);
+    if (posJob <= 0 || posJob > n_job) {
         fprintf(stderr,
                 ROJO_T "Error internal_fg(): el trabajo %d no existe\n" RESET,
                 posJob);
@@ -538,6 +541,12 @@ int internal_fg(char **args) {
     if (jobs_list[posJob].estado == 'D') {
         jobs_list[posJob].estado = 'E';
         kill(jobs_list[posJob].pid, SIGCONT);
+#if DEBUG_6
+        fprintf(stderr,
+                GRIS_T
+                "[internal_fg()→ Señal %d (SIGCONT) enviada a %d (%s)]\n" RESET,
+                SIGCONT, jobs_list[posJob].pid, jobs_list[posJob].cmd);
+#endif
     }
     char *ptrAmpersand = strchr(jobs_list[posJob].cmd, '&');
     if (ptrAmpersand) {
@@ -549,8 +558,7 @@ int internal_fg(char **args) {
     strcpy(jobs_list[0].cmd, jobs_list[posJob].cmd);
     jobs_list_remove(posJob);
 #if DEBUG_6
-    fprintf(stderr, GRIS_T "[internal_fg(): new cmd %s]" RESET,
-            jobs_list[0].cmd);
+    fprintf(stderr, "%s\n", jobs_list[0].cmd);
 #endif
     while (jobs_list[0].pid) {
         pause();
@@ -793,7 +801,6 @@ void ctrlz(int signum) {
             jobs_list[0].estado = 'D';
             jobs_list_add(jobs_list[0].pid, jobs_list[0].estado,
                           jobs_list[0].cmd);
-
             // Reseteamos foreground
             jobs_list[0].pid = 0;
             jobs_list[0].estado = 'N';
@@ -874,6 +881,10 @@ int jobs_list_add(pid_t pid, char estado, char *cmd) {
     jobs_list[n_job].pid = pid;
     jobs_list[n_job].estado = estado;
     strcpy(jobs_list[n_job].cmd, cmd);
+#if DEBUG_6
+    fprintf(stderr, "[%d] %d\t%c\t%s\n", n_job, jobs_list[n_job].pid,
+            jobs_list[n_job].estado, jobs_list[n_job].cmd);
+#endif
     return 0;
 }
 
@@ -974,7 +985,8 @@ int imprimir_prompt() {
     }
     char *cwd = malloc(COMMAND_LINE_SIZE * sizeof(*cwd));
     // Imprimimos el prompt personalizado
-    printf(VERDE_T ERASE_LINE "\r%s" BLANCO_T ":" CYAN_T "%s" BLANCO_T "%c " RESET,
+    printf(VERDE_T ERASE_LINE "\r%s" BLANCO_T ":" CYAN_T "%s" BLANCO_T
+                              "%c " RESET,
            getenv("USER"), getcwd(cwd, COMMAND_LINE_SIZE), PROMPT);
     free(cwd);
     return 0;
