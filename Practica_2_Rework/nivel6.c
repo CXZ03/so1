@@ -1,5 +1,5 @@
 /**
- * Practica 2:      Semana 5
+ * Practica 2:      Semana 6
  * Autores:         Guillem, Elena, Xiaozhe
  * Equipo:          AguacateLovers
  * Grupo grande:    2
@@ -9,11 +9,13 @@
 /* Librerias */
 #define _POSIX_C_SOURCE 200112L  // Version del estándar C
 
+#include <fcntl.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -35,9 +37,10 @@
 
 #define DEBUG_1 0
 #define DEBUG_2 0
-#define DEBUG_3 1
-#define DEBUG_4 1
-#define DEBUG_5 1
+#define DEBUG_3 0
+#define DEBUG_4 0
+#define DEBUG_5 0
+#define DEBUG_6 1
 
 /* Estructuras */
 struct info_job {
@@ -71,6 +74,7 @@ int is_background(char **args);
 int jobs_list_add(pid_t pid, char estado, char *cmd);
 int jobs_list_find(pid_t pid);
 int jobs_list_remove(int pos);
+int is_output_redirection(char **args);
 
 int imprimir_prompt();
 int internal_cd_avanzado(char **args);
@@ -520,6 +524,37 @@ int internal_fg(char **args) {
             "foreground reactivando su ejecución, o uno del background al "
             "foreground]\n" RESET);
 #endif
+    if (args[1] == NULL) {
+        fprintf(stderr, ROJO_T "Error internal_fg(): falta argumento" RESET);
+        return -1;
+    }
+    int posJob = atoi(args[1]);
+    if (posJob <= 0 && posJob >= N_JOBS) {
+        fprintf(stderr,
+                ROJO_T "Error internal_fg(): el trabajo %d no existe\n" RESET,
+                posJob);
+        return -1;
+    }
+    if (jobs_list[posJob].estado == 'D') {
+        jobs_list[posJob].estado = 'E';
+        kill(jobs_list[posJob].pid, SIGCONT);
+    }
+    char *ptrAmpersand = strchr(jobs_list[posJob].cmd, '&');
+    if (ptrAmpersand) {
+        *ptrAmpersand = '\0';
+    }
+    // Mover el trabajo a fg
+    jobs_list[0].pid = jobs_list[posJob].pid;
+    jobs_list[0].estado = jobs_list[posJob].estado;
+    strcpy(jobs_list[0].cmd, jobs_list[posJob].cmd);
+    jobs_list_remove(posJob);
+#if DEBUG_6
+    fprintf(stderr, GRIS_T "[internal_fg(): new cmd %s]" RESET,
+            jobs_list[0].cmd);
+#endif
+    while (jobs_list[0].pid) {
+        pause();
+    }
     return 0;
 }
 
@@ -539,6 +574,40 @@ int internal_bg(char **args) {
     fprintf(stderr, GRIS_T
             "[internal_bg()→ Esta función mostrará el background]\n" RESET);
 #endif
+    if (args[1] == NULL) {
+        fprintf(stderr, ROJO_T "Error internal_bg(): falta argumento" RESET);
+        return -1;
+    }
+    int posJob = atoi(args[1]);
+    if (posJob <= 0 && posJob >= N_JOBS) {
+        fprintf(stderr,
+                ROJO_T "Error internal_bg(): el trabajo %d no existe\n" RESET,
+                posJob);
+        return -1;
+    }
+    if (jobs_list[posJob].estado == 'D') {
+        jobs_list[posJob].estado = 'E';
+        strcat(jobs_list[posJob].cmd, " &");
+        kill(jobs_list[posJob].pid, SIGCONT);
+#if DEBUG_6
+        fprintf(stderr, "[internal_fg() -> Señal %d enviada a %d (%s)\n",
+                SIGCONT, jobs_list[posJob].pid, jobs_list[posJob].cmd);
+#endif
+    } else if (jobs_list[posJob].estado == 'E') {
+        fprintf(stderr, "El trabajo %d, ya está en segundo plano\n", posJob);
+        return 0;
+    }
+    char *ptrAmpersand = strchr(jobs_list[posJob].cmd, '&');
+    if (ptrAmpersand) {
+        *ptrAmpersand = '\0';
+    }
+#if DEBUG_6
+    fprintf(stderr, GRIS_T "[internal_fg(): new cmd %s]" RESET,
+            jobs_list[0].cmd);
+#endif
+    while (jobs_list[0].pid) {
+        pause();
+    }
     return 0;
 }
 
@@ -561,8 +630,8 @@ void reaper(int signum) {
             GRIS_T ERASE_LINE
             "\r[reaper()→ recibida señal %d (SIGINT)]\n" RESET,
             SIGCHLD);
-    pid_t endedPid;
 #endif
+    pid_t endedPid;
     int status;
     while ((endedPid = waitpid(-1, &status, WNOHANG)) > 0) {
         if (endedPid == jobs_list[0].pid) {
@@ -646,7 +715,8 @@ void ctrlc(int signum) {
                     SIGINT);
             fprintf(stderr,
                     GRIS_T
-                    "[ctrlc()→ Señal %d (SIGTERM) enviada a %d (%s) por %d (%s)]\n" RESET,
+                    "[ctrlc()→ Señal %d (SIGTERM) enviada a %d (%s) por %d "
+                    "(%s)]\n" RESET,
                     SIGTERM, jobs_list[0].pid, jobs_list[0].cmd, getpid(),
                     mi_shell);
 #endif
@@ -655,7 +725,8 @@ void ctrlc(int signum) {
 #if DEBUG_4
             fprintf(stderr,
                     GRIS_T
-                    "[ctrlc()→ Señal %d (SIGTERM) no enviada por %d (%s) debido a que el "
+                    "[ctrlc()→ Señal %d (SIGTERM) no enviada por %d (%s) "
+                    "debido a que el "
                     "proceso actual es un mini_shell]\n" RESET,
                     SIGTERM, getpid(), mi_shell);
 #endif
@@ -671,7 +742,8 @@ void ctrlc(int signum) {
                 SIGINT);
         fprintf(stderr,
                 GRIS_T
-                "[ctrlc()→ Señal %d (SIGTERM) no enviada por %d (%s) debido a que no hay "
+                "[ctrlc()→ Señal %d (SIGTERM) no enviada por %d (%s) debido a "
+                "que no hay "
                 "proceso en foreground]\n" RESET,
                 SIGTERM, getpid(), mi_shell);
 #endif
@@ -710,7 +782,8 @@ void ctrlz(int signum) {
                     SIGTSTP);
             fprintf(stderr,
                     GRIS_T
-                    "[ctrlz()→ Señal %d (SIGSTOP) enviada a %d (%s) por %d (%s)]\n" RESET,
+                    "[ctrlz()→ Señal %d (SIGSTOP) enviada a %d (%s) por %d "
+                    "(%s)]\n" RESET,
                     SIGSTOP, jobs_list[0].pid, jobs_list[0].cmd, getpid(),
                     mi_shell);
 #endif
@@ -730,7 +803,8 @@ void ctrlz(int signum) {
 #if DEBUG_5
             fprintf(stderr,
                     GRIS_T
-                    "[ctrlz()→ Señal %d (SIGSTOP) no enviada por %d (%s) debido a que el "
+                    "[ctrlz()→ Señal %d (SIGSTOP) no enviada por %d (%s) "
+                    "debido a que el "
                     "proceso actual es un mini_shell]\n" RESET,
                     SIGSTOP, getpid(), mi_shell);
 #endif
@@ -856,6 +930,33 @@ int jobs_list_remove(int pos) {
 }
 
 /**
+ * Función: int is_output_redirection(char **args)
+ * -----------------------------------------------------------------------------
+ * Descrpción:
+ *   Función que cambia la salida estándard stdout.
+ *
+ * Argumentos:
+ *   - args: argumento del comando.
+ *
+ * Salida:
+ *   - int: 1 redireccionamiento hecho, 0 no redireccionamiento.
+ */
+int is_output_redirection(char **args) {
+    // Buscamos '>'
+    for (int i = 0; args[i] != NULL; i++) {
+        if (strcmp(args[i], ">") == 0 && args[i + 1] != NULL) {
+            args[i] = NULL;
+            int fichStdout = open(args[i + 1], O_WRONLY | O_CREAT | O_TRUNC,
+                                  S_IRUSR | S_IWUSR);
+            dup2(fichStdout, 1);
+            close(fichStdout);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/**
  * Función: int imprimir_prompt()
  * -----------------------------------------------------------------------------
  * Descrpción:
@@ -873,7 +974,7 @@ int imprimir_prompt() {
     }
     char *cwd = malloc(COMMAND_LINE_SIZE * sizeof(*cwd));
     // Imprimimos el prompt personalizado
-    printf(VERDE_T "%s" BLANCO_T ":" CYAN_T "%s" BLANCO_T "%c " RESET,
+    printf(VERDE_T ERASE_LINE "\r%s" BLANCO_T ":" CYAN_T "%s" BLANCO_T "%c " RESET,
            getenv("USER"), getcwd(cwd, COMMAND_LINE_SIZE), PROMPT);
     free(cwd);
     return 0;

@@ -273,8 +273,7 @@ int internal_fg(char **args) {
                 kill(jobs_list[job_index].pid, SIGCONT);
             }
 
-            DeleteCharArray
-        (jobs_list[job_index].cmd, '&');
+            DeleteCharArray(jobs_list[job_index].cmd, '&');
 
             // Actualizamos el fore con el trabajo actual
             jobs_list[0].pid = jobs_list[job_index].pid;
