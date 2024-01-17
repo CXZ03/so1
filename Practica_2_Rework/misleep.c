@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
     int sec = atoi(argv[1]);
     for (int i = 0; i < sec; i++) {
         // fprintf(stderr, "%d\n",i);
-        sleep(15);
+        sleep(1);
     }
     exit(0);
 }

@@ -151,10 +151,6 @@ char *read_line(char *line) {
  *   - int: 0 salida exitosa, -1 si hay error.
  */
 int execute_line(char *line) {
-    printf("LINEA antes: %s\n", line);
-    line = strtok(line, "\n");
-    printf("LINEA despues: %s\n", line);
-
     char *args[ARGS_SIZE];
     int cantidadDeToken = parse_args(args, line);
     if (cantidadDeToken == -1) {
@@ -166,11 +162,6 @@ int execute_line(char *line) {
             case 0:
                 // Caso comando no interno
                 pid_t pid;
-                int status;
-                char cmdLine[COMMAND_LINE_SIZE];
-                // Hacer una copia del comando para el proceso hijo
-                strcpy(cmdLine, line);
-                printf("LINEA cmd: %s\n", cmdLine);
 #if DEBUG_3
                 fprintf(stderr,
                         GRIS_T "[execute_line()→ PID padre: %d (%s)]\n" RESET,
@@ -185,7 +176,7 @@ int execute_line(char *line) {
                     fprintf(stderr,
                             GRIS_T
                             "[execute_line()→ PID hijo: %d (%s)]\n" RESET,
-                            getpid(), cmdLine);
+                            getpid(), line);
 #endif
                     execvp(args[0], args);
 #if DEBUG_3
@@ -198,24 +189,6 @@ int execute_line(char *line) {
                     jobs_list[0].pid = pid;
                     jobs_list[0].estado = 'E';
                     strcpy(jobs_list[0].cmd, line);
-                    wait(&status);
-                    if (WIFEXITED(status)) {
-#if DEBUG_3
-                        fprintf(stderr,
-                                GRIS_T
-                                "[execute_line()→ Proceso hijo %d (%s) "
-                                "finalizado con exit(), estado: %d]\n" RESET,
-                                pid, cmdLine, WEXITSTATUS(status));
-#endif
-                    } else if (WIFSIGNALED(status)) {
-#if DEBUG_3
-                        fprintf(stderr,
-                                GRIS_T
-                                "[execute_line()→ Proceso hijo %d (%s) "
-                                "finalizado por señal %d]\n" RESET,
-                                pid, cmdLine, WTERMSIG(status));
-#endif
-                    }
                 } else {
                     fprintf(stderr,
                             ROJO_T "Error execute_line(): fork()\n" RESET);
@@ -564,17 +537,19 @@ void reaper(int signum) {
         if (endedPid == jobs_list[0].pid) {
             if (WIFEXITED(status)) {
 #if DEBUG_4
-                printf(GRIS_T
-                       "[reaper()→ Proceso hijo %d () finalizado con exit code "
-                       "%d]\n" RESET,
-                       endedPid, WEXITSTATUS(status));
+                printf(
+                    GRIS_T
+                    "[reaper()→ Proceso hijo %d (%s) finalizado con exit code "
+                    "%d]\n" RESET,
+                    endedPid, jobs_list[0].cmd, (status));
 #endif
             } else if (WIFSIGNALED(status)) {
 #if DEBUG_4
-                printf(GRIS_T
-                       "[reaper()→ Proceso hijo %d () finalizado con exit code "
-                       "%d]\n" RESET,
-                       endedPid, WTERMSIG(status));
+                printf(
+                    GRIS_T
+                    "[reaper()→ Proceso hijo %d (%s) finalizado con exit code "
+                    "%d]\n" RESET,
+                    endedPid, jobs_list[0].cmd, WTERMSIG(status));
 #endif
             }
             jobs_list[0].pid = 0;
@@ -628,6 +603,13 @@ void ctrlc(int signum) {
                     "[ctrlc()→ Soy el proceso con PID %d (%s), el "
                     "proceso en foreground es %d (%s)]\n" RESET,
                     getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
+            fprintf(stderr,
+                    GRIS_T
+                    "[ctrlc()→ Señal %d enviada a %d (%s) por %d (%s) debido a "
+                    "que no hay "
+                    "proceso en foreground]\n" RESET,
+                    SIGTERM, jobs_list[0].pid, jobs_list[0].cmd, getpid(),
+                    mi_shell);
 #endif
             kill(jobs_list[0].pid, SIGTERM);
         } else {
