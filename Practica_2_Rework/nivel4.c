@@ -33,7 +33,7 @@
 
 #define DEBUG_1 0
 #define DEBUG_2 0
-#define DEBUG_3 0
+#define DEBUG_3 1
 #define DEBUG_4 1
 
 /* Estructuras */
@@ -91,9 +91,10 @@ int main(int argc, char *argv[]) {
             if (execute_line(line) == -1) {
                 fprintf(stderr, ROJO_T "Error main(): execute_line() \n" RESET);
             }
-        } else {
-            fprintf(stderr, ROJO_T "Error main(): read_line() \n" RESET);
         }
+        // else {
+        //      fprintf(stderr, ROJO_T "Error main(): read_line() \n" RESET);
+        // }
     }
     return 0;
 }
@@ -126,7 +127,7 @@ char *read_line(char *line) {
 #endif
             exit(0);
         }
-        fprintf(stderr, ROJO_T "Error read_line(): fgets() \n" RESET);
+        // fprintf(stderr, ROJO_T "Error read_line(): fgets() \n" RESET);
         return NULL;
     }
     char *punteroLineFeed = strchr(line, '\n');
@@ -150,6 +151,10 @@ char *read_line(char *line) {
  *   - int: 0 salida exitosa, -1 si hay error.
  */
 int execute_line(char *line) {
+    printf("LINEA antes: %s\n", line);
+    line = strtok(line, "\n");
+    printf("LINEA despues: %s\n", line);
+
     char *args[ARGS_SIZE];
     int cantidadDeToken = parse_args(args, line);
     if (cantidadDeToken == -1) {
@@ -164,12 +169,8 @@ int execute_line(char *line) {
                 int status;
                 char cmdLine[COMMAND_LINE_SIZE];
                 // Hacer una copia del comando para el proceso hijo
-                int i = 0;
-                strcpy(cmdLine, args[i++]);
-                for (; args[i] != NULL; i++) {
-                    strcat(cmdLine, " ");
-                    strcat(cmdLine, args[i]);
-                }
+                strcpy(cmdLine, line);
+                printf("LINEA cmd: %s\n", cmdLine);
 #if DEBUG_3
                 fprintf(stderr,
                         GRIS_T "[execute_line()→ PID padre: %d (%s)]\n" RESET,
@@ -186,18 +187,17 @@ int execute_line(char *line) {
                             "[execute_line()→ PID hijo: %d (%s)]\n" RESET,
                             getpid(), cmdLine);
 #endif
-                    if (execvp(args[0], args) == -1) {
+                    execvp(args[0], args);
 #if DEBUG_3
-                        fprintf(stderr,
-                                ROJO_T "%s: no se encontró la orden\n" RESET,
-                                line);
+                    fprintf(stderr,
+                            ROJO_T "%s: no se encontró la orden\n" RESET, line);
 #endif
-                        exit(1);
-                    }
+                    exit(1);
 
                 } else if (pid > 0) {
                     jobs_list[0].pid = pid;
                     jobs_list[0].estado = 'E';
+                    strcpy(jobs_list[0].cmd, line);
                     wait(&status);
                     if (WIFEXITED(status)) {
 #if DEBUG_3
@@ -250,8 +250,10 @@ int execute_line(char *line) {
  *   - int: cantidad de tokens que hay sin contar null.
  */
 int parse_args(char **args, char *line) {
+    char lineCopia[COMMAND_LINE_SIZE];
+    strcpy(lineCopia, line);
     int contadorTokens = 0;
-    args[contadorTokens] = strtok(line, " \t\n\r");
+    args[contadorTokens] = strtok(lineCopia, " \t\n\r");
 #if DEBUG_1
     fprintf(stderr, GRIS_T "[parse_args()→ token %d: %s]\n" RESET,
             contadorTokens, args[contadorTokens]);
@@ -560,20 +562,40 @@ void reaper(int signum) {
     while ((endedPid = waitpid(-1, &status, WNOHANG)) > 0) {
         // Si se ha acabado un hijo fg restaura los valores del fg
         if (endedPid == jobs_list[0].pid) {
+            if (WIFEXITED(status)) {
+#if DEBUG_4
+                printf(GRIS_T
+                       "[reaper()→ Proceso hijo %d () finalizado con exit code "
+                       "%d]\n" RESET,
+                       endedPid, WEXITSTATUS(status));
+#endif
+            } else if (WIFSIGNALED(status)) {
+#if DEBUG_4
+                printf(GRIS_T
+                       "[reaper()→ Proceso hijo %d () finalizado con exit code "
+                       "%d]\n" RESET,
+                       endedPid, WTERMSIG(status));
+#endif
+            }
             jobs_list[0].pid = 0;
             jobs_list[0].estado = 'F';
             strcpy(jobs_list[0].cmd, "");
-        }
-        if (WIFEXITED(status)) {
+        } else {
+            if (WIFEXITED(status)) {
 #if DEBUG_4
-            printf("[Proceso hijo %d () finalizado con exit code %d]\n",
-                   endedPid, WEXITSTATUS(status));
+                printf(GRIS_T
+                       "[reaper()→ Proceso hijo %d () finalizado con exit code "
+                       "%d]\n" RESET,
+                       endedPid, WEXITSTATUS(status));
 #endif
-        } else if (WIFSIGNALED(status)) {
+            } else if (WIFSIGNALED(status)) {
 #if DEBUG_4
-            printf("[Proceso hijo %d () finalizado con exit code %d]\n",
-                   endedPid, WTERMSIG(status));
+                printf(GRIS_T
+                       "[reaper()→ Proceso hijo %d () finalizado con exit code "
+                       "%d]\n" RESET,
+                       endedPid, WTERMSIG(status));
 #endif
+            }
         }
     }
 }
@@ -592,7 +614,7 @@ void reaper(int signum) {
  */
 void ctrlc(int signum) {
     // Alinear el prompt
-    printf("\n");
+    fprintf(stderr, "\n");
     fflush(stdout);
 
     signal(SIGINT, ctrlc);
@@ -601,14 +623,20 @@ void ctrlc(int signum) {
         if (strcmp(jobs_list[0].cmd, mi_shell)) {
             // El proceso no es el del minishell
 #if DEBUG_4
-            printf("la señal no es del minishell\n");
+            fprintf(stderr,
+                    GRIS_T
+                    "[ctrlc()→ Soy el proceso con PID %d (%s), el "
+                    "proceso en foreground es %d (%s)]\n" RESET,
+                    getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
 #endif
             kill(jobs_list[0].pid, SIGTERM);
         } else {
 #if DEBUG_4
             fprintf(stderr,
-                    "Señal SIGTERM no enviada debido a que el proceso en "
-                    "foreground es el shell\n");
+                    GRIS_T
+                    "[ctrlc()→ Señal %d no enviada por %d (%s) debido a que el "
+                    "proceso actual es un mini_shell]\n" RESET,
+                    SIGTERM, getpid(), mi_shell);
 #endif
         }
     } else {
