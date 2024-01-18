@@ -587,7 +587,7 @@ int internal_bg(char **args) {
         return -1;
     }
     int posJob = atoi(args[1]);
-    if (posJob <= 0 && posJob >= N_JOBS) {
+    if (posJob <= 0 || posJob >= N_JOBS) {
         fprintf(stderr,
                 ROJO_T "Error internal_bg(): el trabajo %d no existe\n" RESET,
                 posJob);
@@ -598,11 +598,13 @@ int internal_bg(char **args) {
         strcat(jobs_list[posJob].cmd, " &");
         kill(jobs_list[posJob].pid, SIGCONT);
 #if DEBUG_6
-        fprintf(stderr, "[internal_fg() -> Señal %d enviada a %d (%s)\n",
+        fprintf(stderr, GRIS_T "[internal_bg() -> Señal %d enviada a %d (%s)\n" RESET,
                 SIGCONT, jobs_list[posJob].pid, jobs_list[posJob].cmd);
 #endif
     } else if (jobs_list[posJob].estado == 'E') {
-        fprintf(stderr, "El trabajo %d, ya está en segundo plano\n", posJob);
+        fprintf(stderr,
+                ROJO_T "El trabajo %d, ya está en segundo plano\n" RESET,
+                posJob);
         return 0;
     }
     char *ptrAmpersand = strchr(jobs_list[posJob].cmd, '&');
@@ -610,7 +612,7 @@ int internal_bg(char **args) {
         *ptrAmpersand = '\0';
     }
 #if DEBUG_6
-    fprintf(stderr, GRIS_T "[internal_fg(): new cmd %s]" RESET,
+    fprintf(stderr, GRIS_T "[internal_bg(): new cmd %s]\n" RESET,
             jobs_list[0].cmd);
 #endif
     while (jobs_list[0].pid) {
@@ -676,6 +678,14 @@ void reaper(int signum) {
                        endedPid, jobs_list[jobs_list_find(endedPid)].cmd,
                        WEXITSTATUS(status));
 #endif
+#if DEBUG_6
+                fprintf(
+                    stderr,
+                    ERASE_LINE
+                    "\rTerminado PID %d (%s) en jobs_list[%d] con status %d\n",
+                    jobs_list[posPid].pid, jobs_list[posPid].cmd, posPid,
+                    WEXITSTATUS(status));
+#endif
             } else if (WIFSIGNALED(status)) {
 #if DEBUG_4
                 printf(GRIS_T ERASE_LINE
@@ -684,6 +694,14 @@ void reaper(int signum) {
                        "%d]\n" RESET,
                        endedPid, jobs_list[jobs_list_find(endedPid)].cmd,
                        WTERMSIG(status));
+#endif
+#if DEBUG_6
+                fprintf(
+                    stderr,
+                    ERASE_LINE
+                    "\rTerminado PID %d (%s) en jobs_list[%d] con status %d\n",
+                    jobs_list[posPid].pid, jobs_list[posPid].cmd, posPid,
+                    WTERMSIG(status));
 #endif
             }
             jobs_list_remove(posPid);
