@@ -183,6 +183,7 @@ int execute_line(char *line) {
                     signal(SIGCHLD, SIG_DFL);
                     signal(SIGINT, SIG_IGN);   // Ignorar el ctrl + C
                     signal(SIGTSTP, SIG_IGN);  // Ignorar el ctrl + Z
+                    is_output_redirection(args);
                     execvp(args[0], args);     // Ejecutar comando
 #if DEBUG_3
                     fprintf(stderr,
@@ -529,9 +530,6 @@ int internal_fg(char **args) {
         return -1;
     }
     int posJob = atoi(args[1]);
-    printf("args[1]: %s\n", args[1]);
-    printf("posJob: %d\n", posJob);
-    printf("n_job: %d\n", n_job);
     if (posJob <= 0 || posJob > n_job) {
         fprintf(stderr,
                 ROJO_T "Error internal_fg(): el trabajo %d no existe\n" RESET,
@@ -559,6 +557,7 @@ int internal_fg(char **args) {
     jobs_list_remove(posJob);
 #if DEBUG_6
     fprintf(stderr, "%s\n", jobs_list[0].cmd);
+    fflush(stderr);
 #endif
     while (jobs_list[0].pid) {
         pause();
@@ -607,13 +606,9 @@ int internal_bg(char **args) {
                 posJob);
         return 0;
     }
-    char *ptrAmpersand = strchr(jobs_list[posJob].cmd, '&');
-    if (ptrAmpersand) {
-        *ptrAmpersand = '\0';
-    }
 #if DEBUG_6
-    fprintf(stderr, GRIS_T "[internal_bg(): new cmd %s]\n" RESET,
-            jobs_list[0].cmd);
+    fprintf(stderr, "[%d] %d\t%c\t%s\n", n_job, jobs_list[posJob].pid,
+            jobs_list[posJob].estado, jobs_list[posJob].cmd);
 #endif
     while (jobs_list[0].pid) {
         pause();
